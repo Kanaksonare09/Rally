@@ -7,8 +7,7 @@ import Navbar from './Navbar';
 
 const MotionLink = motion.create(Link);
 
-const VIDEO_URL =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260307_083826_e938b29f-a43a-41ec-a153-3d4730578ab8.mp4';
+const VIDEO_URL = '/assets/night-lake.mp4';
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -90,6 +89,7 @@ export default function Hero() {
       >
         <video
           className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: 'saturate(1.15) contrast(1.05)' }}
           src={VIDEO_URL}
           autoPlay
           muted
@@ -97,12 +97,19 @@ export default function Hero() {
           playsInline
         />
 
+        {/* Top fade — smooths the cut from the pure-black hero text above
+            into the video instead of a hard edge. */}
+        <div
+          className="absolute top-0 left-0 right-0 h-32 z-30 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, transparent, hsl(var(--background)))' }}
+        />
+
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <motion.img
             src="/assets/hero-dashboard.svg"
             alt="RALLY live group dashboard"
-            style={{ y: dashboardY, mixBlendMode: 'luminosity' }}
-            className="max-w-5xl w-[90%] rounded-2xl"
+            style={{ y: dashboardY }}
+            className="max-w-5xl w-[90%] rounded-2xl shadow-2xl shadow-black/60 border border-white/10"
           />
         </div>
 

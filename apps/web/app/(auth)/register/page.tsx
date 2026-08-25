@@ -3,113 +3,108 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Lock, Phone, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Chrome, Github, ArrowRight } from 'lucide-react';
+import AuthHero from '@/components/auth/AuthHero';
+import SocialButton from '@/components/auth/SocialButton';
+import AuthInput from '@/components/auth/AuthInput';
 
-export default function SignUpPage() {
+const STEPS = [
+  { number: 1, text: 'Create your account' },
+  { number: 2, text: 'Create or join a Rally' },
+  { number: 3, text: 'Track your journey live' },
+];
+
+export default function RegisterPage() {
   const router = useRouter();
-  const [fullName, setFullName] = useState('Alex Rivera');
+  const [firstName, setFirstName] = useState('Alex');
+  const [lastName, setLastName] = useState('Rivera');
   const [email, setEmail] = useState('alex@rally.app');
   const [password, setPassword] = useState('password123');
-  const [phone, setPhone] = useState('+1 (555) 234-5678');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (loading) return;
     setLoading(true);
-    setTimeout(() => {
-      router.push('/create-group');
-    }, 600);
+    setTimeout(() => router.push('/create-group'), 600);
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute w-[500px] h-[500px] bg-rally-blue/10 blur-[120px] rounded-full pointer-events-none"></div>
+    <main className="flex min-h-screen w-full bg-background selection:bg-white/30 p-2 lg:h-screen lg:overflow-hidden lg:p-4 transition-all duration-500">
+      <AuthHero
+        heading="Join RALLY"
+        subtitle="Follow these steps to get your group moving."
+        steps={STEPS}
+        activeStep={1}
+      />
 
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        <div className="text-center space-y-3">
-          <Link href="/" className="inline-flex items-center">
-            <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-8 w-auto" />
+      <div className="flex-1 flex flex-col items-center justify-center py-12 lg:py-6 px-4 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto lg:overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="w-full max-w-xl space-y-8 lg:space-y-6 sm:space-y-10"
+        >
+          <Link href="/" className="lg:hidden inline-flex items-center">
+            <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Create RALLY Account</h1>
-          <p className="text-xs text-muted-foreground">Set up your profile to start or join mobility groups</p>
-        </div>
 
-        <form onSubmit={handleSubmit} className="glass-card p-8 rounded-2xl border border-border space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground block">Full Name</label>
-            <div className="relative">
-              <User className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors"
-                placeholder="Alex Rivera"
-              />
+          <div>
+            <h2 className="text-3xl font-medium tracking-tight text-foreground">Create your account</h2>
+            <p className="text-muted-foreground text-sm mt-1.5">Set up your profile to start or join a Rally.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <SocialButton icon={Chrome} label="Google" onClick={() => handleSubmit()} />
+            <SocialButton icon={Github} label="Github" onClick={() => handleSubmit()} />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-background px-4 text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                Or
+              </span>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground block">Email Address</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors"
-                placeholder="alex@rally.app"
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <AuthInput label="First Name" value={firstName} onChange={setFirstName} placeholder="Alex" required />
+              <AuthInput label="Last Name" value={lastName} onChange={setLastName} placeholder="Rivera" required />
             </div>
-          </div>
+            <AuthInput label="Email" type="email" value={email} onChange={setEmail} placeholder="alex@rally.app" required />
+            <AuthInput
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              required
+              helperText="Requires at least 8 characters."
+            />
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground block">Phone Number (Optional)</label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors"
-                placeholder="+1 (555) 000-0000"
-              />
-            </div>
-          </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-14 bg-foreground text-background font-semibold rounded-full hover:bg-white/90 active:scale-[0.98] transition-all mt-4 flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {loading ? 'Creating Account…' : 'Create Account'}
+              {!loading && <ArrowRight className="w-4 h-4" />}
+            </button>
+          </form>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground block">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-rally-blue text-black font-bold text-sm shadow-blue-glow hover:scale-[1.02] transition-all flex items-center justify-center gap-2 mt-2"
-          >
-            {loading ? 'Creating Account...' : 'Complete Sign Up'} <ArrowRight className="w-4 h-4" />
-          </button>
-
-          <div className="text-center pt-2">
-            <span className="text-xs text-muted-foreground">Already have an account? </span>
-            <Link href="/login" className="text-xs font-bold text-rally-blue hover:underline">
-              Sign in
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-foreground hover:underline">
+              Log in
             </Link>
-          </div>
-        </form>
+          </p>
+        </motion.div>
       </div>
-    </div>
+    </main>
   );
 }

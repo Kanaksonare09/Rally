@@ -24,7 +24,7 @@ export default function Footer() {
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-12">
           <div className="max-w-xs">
-            <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-6 w-auto mb-3" />
+            <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mb-1" />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Group intelligence for safer movement.
             </p>

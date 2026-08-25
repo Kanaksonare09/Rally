@@ -31,7 +31,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-60 shrink-0 h-screen sticky top-0 border-r border-border bg-card">
       <Link href="/" className="flex items-center px-6 h-16 border-b border-border">
-        <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-5 w-auto" />
+        <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-9 w-auto mt-2" />
       </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

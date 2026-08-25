@@ -35,7 +35,7 @@ export default function JoinGroupPage() {
 
       <div className="w-full max-w-sm relative z-10">
         <Link href="/" className="inline-flex items-center mb-10">
-          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-6 w-auto" />
+          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
         </Link>
 
         {status === 'success' ? (

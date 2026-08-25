@@ -58,7 +58,7 @@ export default function CreateGroupPage() {
     <div className="min-h-screen bg-background flex flex-col lg:flex-row">
       <div className="w-full lg:w-[440px] shrink-0 border-r border-border flex flex-col justify-center px-6 sm:px-10 py-12">
         <Link href="/" className="inline-flex items-center mb-10">
-          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-6 w-auto" />
+          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
         </Link>
 
         {!joinCode ? (
