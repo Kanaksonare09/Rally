@@ -1,0 +1,23 @@
+# --- Web framework ---
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+
+# --- Database (Supabase Postgres) ---
+sqlalchemy>=2.0.0
+psycopg[binary]>=3.1.0
+geoalchemy2>=0.14.0
+alembic>=1.13.0
+
+# --- Config & validation ---
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+
+# --- Auth (verifying Supabase-issued JWTs only) ---
+pyjwt[crypto]>=2.8.0
+
+# --- Testing ---
+pytest>=8.0.0
+httpx>=0.27.0
+
+# Not yet: redis, numpy, pandas, scikit-learn, websockets, osrm client —
+# added when their respective phases start.

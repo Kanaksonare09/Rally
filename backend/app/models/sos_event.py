@@ -1,0 +1,37 @@
+import uuid
+from datetime import datetime
+from typing import Optional
+
+from geoalchemy2 import Geography
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+from app.models.enums import SOSStatus
+from app.models.mixins import UUIDPrimaryKeyMixin, utc_now
+
+
+class SOSEvent(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "sos_events"
+
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    trip_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # SET NULL, not CASCADE: the record that an emergency happened must
+    # survive even if we later lose the reference to who triggered it.
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
+    )
+
+    location = mapped_column(Geography(geometry_type="POINT", srid=4326), nullable=False)
+    status: Mapped[SOSStatus] = mapped_column(
+        SQLEnum(SOSStatus, name="sos_status"), default=SOSStatus.ACTIVE, nullable=False
+    )
+    triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    trip: Mapped["Trip"] = relationship(back_populates="sos_events")  # noqa: F821
