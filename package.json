@@ -1,0 +1,19 @@
+{
+  "name": "rally-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build:web": "npm run build --workspace=apps/web",
+    "dev:api": "cd apps/api && venv\\Scripts\\activate 2>nul || true && uvicorn main:app --reload --port 8000",
+    "test:api": "cd apps/api && pytest",
+    "build": "npm run build --workspaces"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

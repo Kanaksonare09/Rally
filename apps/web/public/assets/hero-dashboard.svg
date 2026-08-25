@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" fill="none">
+  <rect width="1200" height="750" rx="20" fill="#050505"/>
+  <rect x="0.5" y="0.5" width="1199" height="749" rx="19.5" stroke="white" stroke-opacity="0.1"/>
+
+  <!-- Top bar -->
+  <rect x="0" y="0" width="1200" height="56" rx="20" fill="#0A0A0A"/>
+  <rect x="0" y="36" width="1200" height="20" fill="#0A0A0A"/>
+  <circle cx="28" cy="28" r="6" fill="white" fill-opacity="0.15"/>
+  <circle cx="52" cy="28" r="6" fill="white" fill-opacity="0.15"/>
+  <circle cx="76" cy="28" r="6" fill="white" fill-opacity="0.15"/>
+  <text x="600" y="33" text-anchor="middle" fill="white" fill-opacity="0.5" font-family="monospace" font-size="13" letter-spacing="2">RALLY / LIVE GROUP</text>
+  <rect x="1080" y="16" width="96" height="24" rx="12" fill="white" fill-opacity="0.06"/>
+  <circle cx="1094" cy="28" r="3" fill="#FFFFFF"/>
+  <text x="1104" y="32" fill="white" fill-opacity="0.7" font-family="monospace" font-size="11">LIVE</text>
+
+  <!-- Sidebar -->
+  <rect x="0" y="56" width="220" height="694" fill="#070707"/>
+  <line x1="220" y1="56" x2="220" y2="750" stroke="white" stroke-opacity="0.08"/>
+  <g font-family="Arial, sans-serif" font-size="13">
+    <rect x="24" y="92" width="172" height="36" rx="10" fill="white" fill-opacity="0.08"/>
+    <text x="44" y="115" fill="white" fill-opacity="0.9">Overview</text>
+    <text x="44" y="163" fill="white" fill-opacity="0.45">Live Group</text>
+    <text x="44" y="211" fill="white" fill-opacity="0.45">Trips</text>
+    <text x="44" y="259" fill="white" fill-opacity="0.45">Alerts</text>
+    <text x="44" y="307" fill="white" fill-opacity="0.45">Members</text>
+  </g>
+
+  <!-- Stat tiles -->
+  <g font-family="Arial, sans-serif">
+    <rect x="248" y="88" width="220" height="92" rx="14" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.08"/>
+    <text x="270" y="122" fill="white" fill-opacity="0.5" font-size="11" letter-spacing="1">GROUP HEALTH</text>
+    <text x="270" y="156" fill="white" font-size="30" font-weight="600">94%</text>
+
+    <rect x="484" y="88" width="220" height="92" rx="14" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.08"/>
+    <text x="506" y="122" fill="white" fill-opacity="0.5" font-size="11" letter-spacing="1">MEMBERS</text>
+    <text x="506" y="156" fill="white" font-size="30" font-weight="600">6 / 6</text>
+
+    <rect x="720" y="88" width="220" height="92" rx="14" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.08"/>
+    <text x="742" y="122" fill="white" fill-opacity="0.5" font-size="11" letter-spacing="1">DISTANCE</text>
+    <text x="742" y="156" fill="white" font-size="30" font-weight="600">4.8km</text>
+
+    <rect x="956" y="88" width="196" height="92" rx="14" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.08"/>
+    <text x="978" y="122" fill="white" fill-opacity="0.5" font-size="11" letter-spacing="1">RISK</text>
+    <text x="978" y="156" fill="white" font-size="30" font-weight="600">Low</text>
+  </g>
+
+  <!-- Map panel -->
+  <rect x="248" y="204" width="928" height="490" rx="16" fill="white" fill-opacity="0.03" stroke="white" stroke-opacity="0.08"/>
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="white" stroke-opacity="0.04" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="route" x1="300" y1="620" x2="1100" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect x="248" y="204" width="928" height="490" rx="16" fill="url(#grid)"/>
+
+  <path d="M 310 620 C 500 560, 620 480, 720 430 S 980 300, 1080 270" stroke="url(#route)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <g>
+    <circle cx="720" cy="430" r="14" fill="white" fill-opacity="0.08"/>
+    <circle cx="720" cy="430" r="5" fill="white"/>
+    <text x="736" y="425" fill="white" fill-opacity="0.8" font-family="monospace" font-size="12">Alex</text>
+  </g>
+  <g>
+    <circle cx="760" cy="452" r="14" fill="white" fill-opacity="0.08"/>
+    <circle cx="760" cy="452" r="5" fill="white"/>
+    <text x="776" y="447" fill="white" fill-opacity="0.8" font-family="monospace" font-size="12">Maya</text>
+  </g>
+  <g>
+    <circle cx="1080" cy="270" r="16" fill="white" fill-opacity="0.12" stroke="white" stroke-opacity="0.4"/>
+    <circle cx="1080" cy="270" r="4" fill="white"/>
+  </g>
+  <g>
+    <rect x="560" y="520" width="88" height="34" rx="8" fill="#0A0A0A" stroke="white" stroke-opacity="0.3"/>
+    <text x="604" y="542" text-anchor="middle" fill="white" fill-opacity="0.85" font-family="monospace" font-size="12">Ben</text>
+  </g>
+
+  <rect x="272" y="632" width="260" height="38" rx="10" fill="#0A0A0A" fill-opacity="0.8" stroke="white" stroke-opacity="0.1"/>
+  <circle cx="292" cy="651" r="3" fill="white"/>
+  <text x="304" y="656" fill="white" fill-opacity="0.7" font-family="monospace" font-size="11">CONVOY SYNCED @ 5HZ</text>
+</svg>
