@@ -121,7 +121,11 @@ export default function Navbar() {
       <nav className="w-full max-w-[1280px] px-6 md:px-8 flex items-center justify-between h-full">
         {/* Logo */}
         <Link href="/" className="flex items-center" aria-label="RALLY Home">
-          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-9 w-auto object-contain" />
+          <img 
+            src="/assets/new-rally-logo-transparent.png" 
+            alt="RALLY" 
+            className="h-9 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity" 
+          />
         </Link>
 
         {/* Desktop Navigation */}
