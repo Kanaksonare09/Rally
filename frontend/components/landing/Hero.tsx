@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Navbar from './Navbar';
+import InteractiveDashboard from './InteractiveDashboard';
 
 const MotionLink = motion.create(Link);
 
@@ -105,12 +106,12 @@ export default function Hero() {
         />
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <motion.img
-            src="/assets/hero-dashboard.svg"
-            alt="RALLY live group dashboard"
+          <motion.div
             style={{ y: dashboardY }}
-            className="max-w-5xl w-[90%] rounded-2xl shadow-2xl shadow-black/60 border border-white/10"
-          />
+            className="w-[90%] max-w-5xl"
+          >
+            <InteractiveDashboard />
+          </motion.div>
         </div>
 
         <div

@@ -106,7 +106,13 @@ export default function LiveMap({
     mapRef.current = map;
     const pts = group.members.map((m) => [m.lat, m.lng] as [number, number]);
     pts.push([group.destinationLat, group.destinationLng]);
-    map.fitBounds(pts, { padding: [70, 70], maxZoom: 16 });
+    // animate: false — an animated transition kicked off the instant the
+    // map mounts can outlive a React 18 StrictMode dev double-mount
+    // (mount -> cleanup -> mount), leaving a transitionend callback that
+    // fires against an already-torn-down map instance ("Cannot read
+    // properties of undefined (reading '_leaflet_pos')"). User-triggered
+    // fit/locate below stay animated since there's no such race there.
+    map.fitBounds(pts, { padding: [70, 70], maxZoom: 16, animate: false });
   };
 
   const handleLocateMe = () => {

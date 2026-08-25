@@ -71,7 +71,10 @@ export default function RouteReplayMap({ summary }: { summary: TripSummary }) {
         <MapBridge
           onReady={(map) => {
             const pts: [number, number][] = [...routePositions, [summary.destinationLat, summary.destinationLng]];
-            map.fitBounds(pts, { padding: [50, 50] });
+            // animate: false — see LiveMap.tsx's handleMapReady for why an
+            // animated transition on mount can crash under StrictMode's
+            // dev double-mount.
+            map.fitBounds(pts, { padding: [50, 50], animate: false });
           }}
         />
 
