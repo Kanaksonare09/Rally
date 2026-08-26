@@ -49,12 +49,15 @@ const COLUMNS = [
 export default function Footer() {
   return (
     <footer className="relative bg-[#000000] overflow-hidden pt-12 pb-24 border-t border-white/10">
-      {/* Huge subtle text background */}
+      {/* Subtle text background with enhanced visibility */}
       <div 
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex justify-center pointer-events-none select-none overflow-hidden"
-        style={{ maskImage: 'linear-gradient(to bottom, black 20%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 20%, transparent 100%)' }}
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex justify-center pointer-events-none select-none overflow-hidden z-0"
+        style={{
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0.15) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0.15) 100%)',
+        }}
       >
-        <h1 className="text-[26vw] leading-[0.8] font-bold tracking-tighter uppercase whitespace-nowrap text-white/[0.03]">
+        <h1 className="text-[26vw] leading-[0.8] font-bold tracking-tighter uppercase whitespace-nowrap text-white/[0.08]">
           RALLY
         </h1>
       </div>
