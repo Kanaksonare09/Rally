@@ -45,7 +45,11 @@ export default function LoginPage() {
           className="w-full max-w-xl space-y-8 lg:space-y-6 sm:space-y-10"
         >
           <Link href="/" className="lg:hidden inline-flex items-center">
-            <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
+            <img
+              src="/assets/new-rally-logo-transparent.png"
+              alt="RALLY"
+              className="h-7.5 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+            />
           </Link>
 
           <div>

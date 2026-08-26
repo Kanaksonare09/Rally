@@ -10,7 +10,7 @@ export default function FinalCTA() {
     <section className="py-24 md:py-32 px-8 md:px-28 bg-background border-t border-border">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl md:text-5xl tracking-[-1px] font-medium leading-tight mb-4">
-          Start your next <span className="font-serif italic font-normal">journey together.</span>
+          Your next journey <span className="font-serif italic font-normal">should feel like one.</span>
         </h2>
         <p className="text-base text-muted-foreground mb-10">
           Create a Rally in seconds, or join one with a code from your group leader.

@@ -124,7 +124,7 @@ export default function Navbar() {
           <img 
             src="/assets/new-rally-logo-transparent.png" 
             alt="RALLY" 
-            className="h-9 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity" 
+            className="h-8 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity" 
           />
         </Link>
 

@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 
 const QUOTE =
-  "RALLY changed how our team moves together. We spot risk earlier, close the gap faster, and every trip feels less like guesswork and more like a plan we can trust.";
+  "Before RALLY, keeping everyone together meant constantly checking where everyone was. Now we can actually enjoy the trip.";
 
 const AUTHOR = {
   name: 'Brooklyn Simmons',

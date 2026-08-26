@@ -60,7 +60,11 @@ export default function AuthHero({
         className="relative z-10 w-full max-w-xs space-y-8"
       >
         <motion.div variants={item}>
-          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
+          <img
+            src="/assets/new-rally-logo-transparent.png"
+            alt="RALLY"
+            className="h-7.5 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+          />
         </motion.div>
 
         <motion.div variants={item} className="space-y-2">

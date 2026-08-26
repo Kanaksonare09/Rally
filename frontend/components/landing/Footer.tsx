@@ -5,20 +5,19 @@ const COLUMNS = [
   {
     title: 'Product',
     links: [
-      { label: 'Live Tracking', href: '/dashboard' },
-      { label: 'Geofencing', href: '/dashboard' },
-      { label: 'Telemetry', href: '/dashboard' },
-      { label: 'Safety Alerts', href: '/dashboard' },
-      { label: 'Groups', href: '/join-group' },
+      { label: 'Live Tracking', href: '/product/live-tracking' },
+      { label: 'Smart Alerts', href: '/product/smart-alerts' },
+      { label: 'Route Intelligence', href: '/product/route-intelligence' },
+      { label: 'Group Health', href: '/product/group-health' },
+      { label: 'Trip Analytics', href: '/product/analytics' },
     ],
   },
   {
     title: 'Resources',
     links: [
-      { label: 'Documentation', href: '#' },
-      { label: 'Status', href: '#' },
-      { label: 'API Reference', href: '#' },
-      { label: 'Security', href: '#' },
+      { label: 'Documentation', href: '/docs' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Safety', href: '/safety' },
     ],
   },
   {
@@ -27,23 +26,29 @@ const COLUMNS = [
       { label: 'About', href: '#' },
       { label: 'Blog', href: '#' },
       { label: 'Careers', href: '#' },
-      { label: 'Press', href: '#' },
     ],
   },
   {
-    title: 'Legal',
+    title: 'Help',
     links: [
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms of Service', href: '#' },
-      { label: 'Cookie Policy', href: '#' },
-      { label: 'GDPR', href: '#' },
+      { label: 'Contact', href: '/contact' },
+      { label: 'Support', href: '#' },
+      { label: 'Status', href: '#' },
+    ],
+  },
+  {
+    title: 'Get Started',
+    links: [
+      { label: 'Sign In', href: '/login' },
+      { label: 'Create a Rally', href: '/create-group' },
+      { label: 'Join a Rally', href: '/join-group' },
     ],
   },
 ];
 
 export default function Footer() {
   return (
-    <footer className="relative bg-[#000000] overflow-hidden pt-12 pb-24 border-t border-white/[0.05]">
+    <footer className="relative bg-[#000000] overflow-hidden pt-12 pb-24 border-t border-white/10">
       {/* Huge subtle text background */}
       <div 
         className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex justify-center pointer-events-none select-none overflow-hidden"
@@ -88,7 +93,7 @@ export default function Footer() {
           </div>
 
           {/* Right section columns */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-12 lg:gap-x-20">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-10 gap-y-12 lg:gap-x-14">
             {COLUMNS.map((col) => (
               <div key={col.title} className="flex flex-col gap-6">
                 <h4 className="text-[14px] font-medium text-white/90">

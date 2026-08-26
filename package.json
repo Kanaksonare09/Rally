@@ -10,6 +10,7 @@
     "dev:web": "npm run dev --workspace=frontend",
     "build:web": "npm run build --workspace=frontend",
     "dev:api": "cd backend && venv\\Scripts\\activate.ps1 ; uvicorn app.main:app --reload --port 8000",
+    "dev:backend": "cd backend && venv\\Scripts\\activate.ps1 ; uvicorn app.main:app --reload --port 8000",
     "test:api": "cd backend && venv\\Scripts\\activate.ps1 ; pytest tests/",
     "build": "npm run build --workspaces"
   },

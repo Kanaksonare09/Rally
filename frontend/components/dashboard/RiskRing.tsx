@@ -33,8 +33,8 @@ export default function RiskRing({ risk, size = 96 }: { risk: RiskAssessment; si
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold text-foreground leading-none">{risk.score}</span>
-        <span className="text-[10px] text-muted-foreground leading-none mt-0.5">/ 100</span>
+        <span className="text-lg font-bold font-mono text-white leading-none">{risk.score}</span>
+        <span className="text-[9px] font-mono text-white/50 leading-none mt-0.5">/ 100</span>
       </div>
     </div>
   );

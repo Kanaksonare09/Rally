@@ -34,8 +34,12 @@ export default function JoinGroupPage() {
       <div className="absolute w-[500px] h-[500px] bg-rally-blue/10 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-sm relative z-10">
-        <Link href="/" className="inline-flex items-center mb-10">
-          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
+        <Link href="/" className="inline-flex items-center mb-8">
+          <img
+            src="/assets/new-rally-logo-transparent.png"
+            alt="RALLY"
+            className="h-7.5 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+          />
         </Link>
 
         {status === 'success' ? (

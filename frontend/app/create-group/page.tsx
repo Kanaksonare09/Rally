@@ -56,10 +56,15 @@ export default function CreateGroupPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row">
-      <div className="w-full lg:w-[440px] shrink-0 border-r border-border flex flex-col justify-center px-6 sm:px-10 py-12">
-        <Link href="/" className="inline-flex items-center mb-10">
-          <img src="/assets/rally-wordmark.png" alt="RALLY" className="h-10 w-auto mt-2" />
-        </Link>
+      <div className="w-full lg:w-[440px] shrink-0 border-r border-border flex flex-col justify-between px-6 sm:px-10 py-10 min-h-screen">
+        <div>
+          <Link href="/" className="inline-flex items-center mb-8">
+            <img
+              src="/assets/new-rally-logo-transparent.png"
+              alt="RALLY"
+              className="h-7.5 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+            />
+          </Link>
 
         {!joinCode ? (
           <>
@@ -187,6 +192,7 @@ export default function CreateGroupPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       <div className="hidden lg:block flex-1 relative p-6">
