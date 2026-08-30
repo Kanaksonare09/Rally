@@ -44,7 +44,7 @@ export default function Testimonial() {
   const words = QUOTE.split(' ');
 
   return (
-    <section id="testimonial" className="min-h-screen flex items-center py-24 md:py-32 px-8 md:px-28 bg-background">
+    <section id="testimonial" className="min-h-[70vh] sm:min-h-screen flex items-center py-24 md:py-32 px-8 md:px-28 bg-background">
       <div ref={containerRef} className="max-w-3xl mx-auto flex flex-col items-start gap-10">
         <img src="/assets/quote-symbol.svg" alt="" className="w-14 h-10 object-contain" />
 

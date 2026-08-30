@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Chrome, Github, ArrowRight } from 'lucide-react';
+import { Chrome, Github, ArrowRight, AlertCircle } from 'lucide-react';
 import AuthHero from '@/components/auth/AuthHero';
 import SocialButton from '@/components/auth/SocialButton';
 import AuthInput from '@/components/auth/AuthInput';
+import { useAuth } from '@/lib/auth/AuthProvider';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 const STEPS = [
   { number: 1, text: 'Sign in to your account' },
@@ -16,16 +18,61 @@ const STEPS = [
 ];
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('demo@rally.app');
-  const [password, setPassword] = useState('password123');
-  const [loading, setLoading] = useState(false);
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
 
-  const handleSubmit = (e?: React.FormEvent) => {
+function LoginPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signInWithPassword, user } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
+
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
+
+  // Navigate only once this component has actually re-rendered with a
+  // truthy `user` from context, rather than immediately after
+  // signInWithPassword's promise resolves. AuthProvider's own state
+  // update (from that same call) and this navigation are otherwise two
+  // independent async continuations with no guaranteed order — pushing
+  // straight to router.push() could land on /dashboard a render tick
+  // before the auth context has actually caught up, and RequireAuth
+  // would bounce straight back to /login. Waiting for `user` here closes
+  // that gap for good, regardless of timing.
+  useEffect(() => {
+    if (signedIn && user) {
+      router.push(redirectTo);
+    }
+  }, [signedIn, user, router, redirectTo]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (loading) return;
     setLoading(true);
-    setTimeout(() => router.push('/dashboard'), 600);
+    setError(null);
+    const { error: signInError } = await signInWithPassword(email, password);
+    setLoading(false);
+    if (signInError) {
+      setError(signInError);
+      return;
+    }
+    setSignedIn(true);
+  };
+
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    setError(null);
+    const { error: oauthError } = await getSupabaseClient().auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: typeof window !== 'undefined' ? `${window.location.origin}${redirectTo}` : undefined },
+    });
+    if (oauthError) setError(oauthError.message);
   };
 
   return (
@@ -58,8 +105,8 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <SocialButton icon={Chrome} label="Google" onClick={() => handleSubmit()} />
-            <SocialButton icon={Github} label="Github" onClick={() => handleSubmit()} />
+            <SocialButton icon={Chrome} label="Google" onClick={() => handleOAuth('google')} />
+            <SocialButton icon={Github} label="Github" onClick={() => handleOAuth('github')} />
           </div>
 
           <div className="relative">
@@ -84,13 +131,19 @@ export default function LoginPage() {
               required
             />
 
+            {error && (
+              <p className="flex items-center gap-1.5 text-xs text-red-400 px-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || signedIn}
               className="w-full h-14 bg-foreground text-background font-semibold rounded-full hover:bg-white/90 active:scale-[0.98] transition-all mt-4 flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {loading ? 'Signing In…' : 'Sign In'}
-              {!loading && <ArrowRight className="w-4 h-4" />}
+              {loading || signedIn ? 'Signing In…' : 'Sign In'}
+              {!loading && !signedIn && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
 

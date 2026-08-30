@@ -81,7 +81,7 @@ export default function ContactInteractive() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-4 text-base sm:text-lg text-white/60 max-w-xl font-normal leading-relaxed"
         >
-          Questions, feedback, or something not working right — we'd like to hear about it.
+          Questions, feedback, or something not working right — we&apos;d like to hear about it.
         </motion.p>
       </section>
 

@@ -85,16 +85,21 @@ export interface TripSummary {
   destination: string;
   date: string; // human readable, e.g. "Aug 22, 2026"
   completedAt: number;
-  distanceKm: number;
-  durationMin: number;
+  // Nullable (not just widened for real data): the backend genuinely
+  // cannot compute some of these for every trip (e.g. distance with no
+  // GPS history at all) — null means "unknown", never fabricated as 0
+  // (Phase 13, item 24). The mock service still always supplies concrete
+  // numbers, which remain assignable to these wider types.
+  distanceKm: number | null;
+  durationMin: number | null;
   membersCount: number;
-  alertsCount: number;
-  routeDeviations: number;
-  separationEvents: number;
-  unexpectedStops: number;
-  sosCount: number;
-  safetyScore: number;
-  riskLevel: RiskAssessment['level'];
+  alertsCount: number | null;
+  routeDeviations: number | null;
+  separationEvents: number | null;
+  unexpectedStops: number | null;
+  sosCount: number | null;
+  safetyScore: number | null;
+  riskLevel: RiskAssessment['level'] | null;
   route: RouteWaypoint[];
   destinationLat: number;
   destinationLng: number;

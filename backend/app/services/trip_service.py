@@ -59,7 +59,11 @@ def _point_wkt(latitude: Optional[float], longitude: Optional[float]) -> Optiona
     return f"POINT({longitude} {latitude})"
 
 
+from app.services.profile_service import get_or_create_profile
+
+
 def create_trip(db: Session, group_id: uuid.UUID, user_id: uuid.UUID, data: TripCreate) -> Trip:
+    get_or_create_profile(db, str(user_id))
     destination = _point_wkt(data.latitude, data.longitude)
     trip = Trip(
         group_id=group_id,

@@ -50,7 +50,7 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-5xl md:text-7xl tracking-[-2px] font-medium leading-tight md:leading-[1.15] mb-3 max-w-4xl"
         >
-          Your Group's Movement. <br />
+          Your Group&apos;s Movement. <br />
           <span className="font-serif italic font-normal">One Clear Overview.</span>
         </motion.h1>
 

@@ -15,10 +15,18 @@ export default function AlertDetailPanel({
   alert,
   onClose,
   onResolve,
+  resolving = false,
+  error = null,
 }: {
   alert: AlertItem;
   onClose: () => void;
   onResolve: (id: string) => void;
+  /** True while a resolve request is in flight — the button reflects
+   * that instead of assuming success (Phase 13, item 18). */
+  resolving?: boolean;
+  /** Set when the last resolve attempt failed — shown instead of
+   * silently reverting to "still active" with no explanation. */
+  error?: string | null;
 }) {
   const rows = [
     { icon: Users, label: 'Member', value: alert.memberName ?? '—' },
@@ -74,12 +82,16 @@ export default function AlertDetailPanel({
             View on Map
           </Link>
           {alert.status === 'active' ? (
-            <button
-              onClick={() => onResolve(alert.id)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-semibold hover:opacity-85 transition-opacity"
-            >
-              <Check className="w-4 h-4" /> Resolve Alert
-            </button>
+            <>
+              <button
+                onClick={() => onResolve(alert.id)}
+                disabled={resolving}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-semibold hover:opacity-85 transition-opacity disabled:opacity-60"
+              >
+                <Check className="w-4 h-4" /> {resolving ? 'Resolving…' : 'Resolve Alert'}
+              </button>
+              {error && <p className="text-xs text-red-400 text-center">{error}</p>}
+            </>
           ) : (
             <div className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 text-sm font-semibold">
               <Check className="w-4 h-4" /> Resolved

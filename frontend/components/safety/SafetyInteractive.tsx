@@ -104,7 +104,7 @@ export default function SafetyInteractive() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-6 text-xs sm:text-base text-white/60 max-w-[320px] sm:max-w-2xl font-normal leading-relaxed"
         >
-          Location is sensitive data. RALLY is built so it's only ever visible to the people it's meant for, for exactly as long as it's needed.
+          Location is sensitive data. RALLY is built so it&apos;s only ever visible to the people it&apos;s meant for, for exactly as long as it&apos;s needed.
         </motion.p>
 
         {/* System status indicator */}
@@ -136,7 +136,7 @@ export default function SafetyInteractive() {
           </div>
 
           <h2 className="text-[28px] sm:text-5xl font-medium tracking-tight text-white leading-[1.08] font-sans max-w-[350px] sm:max-w-3xl">
-            Your location belongs to the group you're traveling with — <br className="hidden sm:block" />
+            Your location belongs to the group you&apos;re traveling with — <br className="hidden sm:block" />
             <span className="font-serif italic font-normal text-white/85">
               and only for as long as the trip requires it.
             </span>

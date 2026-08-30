@@ -8,9 +8,13 @@ export default function GroupHealthCard({ group }: { group: Group }) {
   const onlineCount = group.members.filter((m) => m.online).length;
   const critical = group.members.filter((m) => m.status === 'critical');
   const warning = group.members.filter((m) => m.status === 'warning');
+  const deviationAlerts = group.alerts.filter((a) => a.type === 'route_deviation' && a.status === 'active');
 
   const insights = [
-    { ok: true, label: 'Route aligned' },
+    {
+      ok: deviationAlerts.length === 0,
+      label: deviationAlerts.length === 0 ? 'Route aligned' : `${deviationAlerts.length} member${deviationAlerts.length > 1 ? 's' : ''} off route`,
+    },
     {
       ok: critical.length === 0,
       label:

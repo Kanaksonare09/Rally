@@ -163,3 +163,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
 }
+
+/* CARTO's free dark_all raster basemap now requires an account/API key
+ * (it started serving an "API KEY REQUIRED" watermark tile instead of
+ * real map data) — every map uses plain, always-free OpenStreetMap
+ * tiles instead, inverted + hue-rotated to approximate the same dark
+ * look this app already had, with no key or account required. */
+.map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.5);
+}

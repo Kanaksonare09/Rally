@@ -11,7 +11,10 @@ from app.models.enums import GroupStatus, MemberRole, MemberStatus
 from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.models.profile import Profile
+from app.notifications import service as notification_service
 from app.schemas.group import GroupCreate
+from app.services.profile_service import get_or_create_profile
+
 
 def generate_join_code() -> str:
     """Generate a unique, human-readable join code."""
@@ -23,6 +26,7 @@ def generate_join_code() -> str:
 
 def create_group(db: Session, user_id: uuid.UUID, group_data: GroupCreate) -> Group:
     """Create a new group and make the creator the leader."""
+    get_or_create_profile(db, str(user_id))
     
     # 1. Generate unique join code
     join_code = generate_join_code()
@@ -62,6 +66,7 @@ def create_group(db: Session, user_id: uuid.UUID, group_data: GroupCreate) -> Gr
 
 def join_group(db: Session, user_id: uuid.UUID, join_code: str) -> Group:
     """Join an active group using its join code."""
+    get_or_create_profile(db, str(user_id))
     join_code = join_code.strip().upper()
     
     group = db.scalars(select(Group).where(Group.join_code == join_code)).first()
@@ -80,7 +85,12 @@ def join_group(db: Session, user_id: uuid.UUID, join_code: str) -> Group:
         if existing_member.status == MemberStatus.ACTIVE:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already an active member of this group.")
         elif existing_member.status == MemberStatus.REMOVED:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You have been removed from this group.")
+            # Deliberately the same generic wording as the "non-active
+            # group" 403 above, not "you were removed from this group" —
+            # see JOIN CODE PROTECTION in the README: a controlled
+            # response that rejects the join without confirming anything
+            # about this code/group's history back to the caller.
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot join this group.")
         elif existing_member.status == MemberStatus.LEFT:
             # Rejoin logic
             existing_member.status = MemberStatus.ACTIVE
@@ -88,6 +98,7 @@ def join_group(db: Session, user_id: uuid.UUID, join_code: str) -> Group:
             existing_member.role = MemberRole.MEMBER
             db.commit()
             db.refresh(group)
+            _notify_member_joined(db, group, user_id)
             return group
 
     # Create new membership
@@ -100,7 +111,19 @@ def join_group(db: Session, user_id: uuid.UUID, join_code: str) -> Group:
     db.add(new_member)
     db.commit()
     db.refresh(group)
+    _notify_member_joined(db, group, user_id)
     return group
+
+
+def _notify_member_joined(db: Session, group: Group, new_member_id: uuid.UUID) -> None:
+    """Every OTHER active member is told; the join/leave events
+    themselves are naturally infrequent, human-initiated actions (not an
+    automated signal that could rapidly re-fire), so no dedup_key is
+    needed the way alert/SOS notifications require one."""
+    notification_service.notify_group_safely(
+        db, group_id=group.id, type="MEMBER_JOINED", title="Member joined",
+        message="A new member has joined the group.", severity="INFO", exclude_user_id=new_member_id,
+    )
 
 
 def get_group(db: Session, group_id: uuid.UUID) -> Optional[Group]:
@@ -120,8 +143,8 @@ def get_group_members_with_profiles(db: Session, group_id: uuid.UUID):
     for member, profile in results:
         members_data.append({
             "user_id": member.user_id,
-            "name": profile.full_name_hint,
-            "avatar_url": profile.avatar_url_hint,
+            "name": profile.full_name,
+            "avatar_url": profile.avatar_url,
             "role": member.role,
             "status": member.status,
             "joined_at": member.joined_at,
@@ -163,6 +186,10 @@ def leave_group(db: Session, group_id: uuid.UUID, user_id: uuid.UUID):
         
     member.status = MemberStatus.LEFT
     db.commit()
+    notification_service.notify_group_safely(
+        db, group_id=group_id, type="MEMBER_LEFT", title="Member left",
+        message="A member has left the group.", severity="INFO", exclude_user_id=user_id,
+    )
 
 
 def remove_member(db: Session, group_id: uuid.UUID, target_user_id: uuid.UUID, leader_id: uuid.UUID):

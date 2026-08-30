@@ -231,7 +231,7 @@ export default function TripAnalyticsInteractive() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-6 text-base sm:text-lg text-white/60 max-w-2xl font-normal leading-relaxed"
         >
-          Trips aren't deleted when they end — they become history you can review, replay, and learn from.
+          Trips aren&apos;t deleted when they end — they become history you can review, replay, and learn from.
         </motion.p>
       </section>
 
@@ -402,7 +402,7 @@ export default function TripAnalyticsInteractive() {
           </h2>
 
           <p className="mt-6 text-base sm:text-lg text-white/60 font-normal leading-relaxed">
-            Completed and cancelled trips stay in your group's history, exactly as they happened.
+            Completed and cancelled trips stay in your group&apos;s history, exactly as they happened.
           </p>
         </div>
 
@@ -480,12 +480,12 @@ export default function TripAnalyticsInteractive() {
         <h2 className="text-3xl sm:text-5xl md:text-6xl font-medium tracking-tight text-white leading-tight">
           The trip ends. <br />
           <span className="font-serif italic font-normal text-white/85">
-            The record doesn't.
+            The record doesn&apos;t.
           </span>
         </h2>
 
         <p className="mt-6 text-base sm:text-lg text-white/60 max-w-xl mx-auto font-normal leading-relaxed">
-          Every completed or cancelled trip remains available as part of the group's history.
+          Every completed or cancelled trip remains available as part of the group&apos;s history.
         </p>
 
         {/* Data Convergence Diagram */}

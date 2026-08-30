@@ -497,7 +497,7 @@ export default function SmartAlertsInteractive() {
       {/* 11. EXPLANATION SECTION (Large Editorial Statement & Visual Timeline — NO CARDS) */}
       <section className="py-24 px-6 max-w-4xl mx-auto text-center border-t border-white/5">
         <h2 className="text-3xl sm:text-5xl md:text-6xl font-medium tracking-tight text-white leading-tight">
-          RALLY doesn't wait <br />
+          RALLY doesn&apos;t wait <br />
           <span className="font-serif italic font-normal text-white/85">
             for an emergency.
           </span>

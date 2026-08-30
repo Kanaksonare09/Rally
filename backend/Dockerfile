@@ -14,7 +14,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini .
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Runs migrations (when DATABASE_URL is set) before starting uvicorn, so
+# a fresh container is reproducible on its own — see docker-entrypoint.sh
+# and the README's "Startup order" section.
+ENTRYPOINT ["./docker-entrypoint.sh"]

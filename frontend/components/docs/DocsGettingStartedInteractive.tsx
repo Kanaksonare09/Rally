@@ -197,7 +197,7 @@ export default function DocsGettingStartedInteractive() {
 
             <div className="text-base text-white/70 leading-[1.8] space-y-6 font-normal">
               <p>
-                Create an account, then either start a new group or join one with a code from your group's leader. Every group needs at least one leader — whoever creates the group becomes its leader automatically.
+                Create an account, then either start a new group or join one with a code from your group&apos;s leader. Every group needs at least one leader — whoever creates the group becomes its leader automatically.
               </p>
 
               {/* Inline Step Callout */}
@@ -287,9 +287,9 @@ export default function DocsGettingStartedInteractive() {
 
             <div className="text-base text-white/70 leading-[1.8] space-y-6 font-normal">
               <p>
-                Have a code from your group's leader? Head to{' '}
+                Have a code from your group&apos;s leader? Head to{' '}
                 <Link href="/join-group" className="text-white underline underline-offset-4 hover:text-white/80">Join a Rally</Link>{' '}
-                and enter it. You'll appear on the group's live map as soon as you join.
+                and enter it. You&apos;ll appear on the group&apos;s live map as soon as you join.
               </p>
 
               {/* Minimal Abstract Process Flow (Item #9) */}
@@ -375,7 +375,7 @@ export default function DocsGettingStartedInteractive() {
 
             <div className="text-base text-white/70 leading-[1.8] space-y-6 font-normal">
               <p>
-                Once a trip is active, each member's position updates on the shared map in real time. RALLY watches for members falling behind, drifting from the group, or losing connectivity, and surfaces it as soon as it happens rather than after the fact.
+                Once a trip is active, each member&apos;s position updates on the shared map in real time. RALLY watches for members falling behind, drifting from the group, or losing connectivity, and surfaces it as soon as it happens rather than after the fact.
               </p>
 
               {/* Abstract Functional Diagram (Item #11) */}

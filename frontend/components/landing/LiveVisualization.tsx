@@ -105,13 +105,16 @@ export default function LiveVisualization() {
             <div className="relative w-full h-full max-w-4xl mx-auto flex items-center justify-center font-mono">
               
               {/* Member 1: Maya (Separated/Lagging behind) */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${12 + (progress * 0.4)}%`, top: `${70 - (progress * 0.22)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.9)] animate-pulse" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-amber-500/40 text-[11px] font-mono text-amber-200 whitespace-nowrap backdrop-blur-md shadow-lg flex items-center gap-1.5">
+                  {/* Text labels hidden below sm — five nowrap badges on a
+                      ~350px-wide container collide regardless of their %
+                      spacing, since the label width itself doesn't shrink. */}
+                  <div className="hidden sm:flex px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-amber-500/40 text-[11px] font-mono text-amber-200 whitespace-nowrap backdrop-blur-md shadow-lg items-center gap-1.5">
                     <span className="font-semibold">Maya</span>
                     <span className="text-[10px] text-amber-400">180m behind</span>
                   </div>
@@ -119,20 +122,21 @@ export default function LiveVisualization() {
               </div>
 
               {/* Member 2: Alex */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${28 + (progress * 0.48)}%`, top: `${56 - (progress * 0.28)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg">
+                  <div className="hidden sm:block px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg">
                     <span className="font-semibold">Alex</span>
                   </div>
                 </div>
               </div>
 
-              {/* Member 3: YOU (Lead Spotlight) */}
-              <div 
+              {/* Member 3: YOU (Lead Spotlight) — stays labeled at every
+                  width since it's a single short badge, not a crowd. */}
+              <div
                 className="absolute transition-all duration-700 ease-out z-30"
                 style={{ left: `${50 + (progress * 0.42)}%`, top: `${36 - (progress * 0.3)}%` }}
               >
@@ -151,13 +155,13 @@ export default function LiveVisualization() {
               </div>
 
               {/* Member 4: Ben */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${65 + (progress * 0.35)}%`, top: `${24 - (progress * 0.25)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg">
+                  <div className="hidden sm:block px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg">
                     <span className="font-semibold">Ben</span>
                   </div>
                 </div>

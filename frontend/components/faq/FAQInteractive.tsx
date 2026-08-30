@@ -318,7 +318,7 @@ export default function FAQInteractive() {
             /* No Results Search State */
             <div className="py-16 text-center space-y-3 font-mono text-xs">
               <div className="text-white text-base font-sans font-medium">No questions found.</div>
-              <div className="text-white/50">Try another search or select "ALL" categories.</div>
+              <div className="text-white/50">Try another search or select &quot;ALL&quot; categories.</div>
             </div>
           ) : (
             /* Grouped Questions List */
@@ -412,7 +412,7 @@ export default function FAQInteractive() {
           </h3>
 
           <p className="mt-3 text-base text-white/60 font-normal font-sans">
-            We're here to help.
+            We&apos;re here to help.
           </p>
 
           <div className="mt-8">

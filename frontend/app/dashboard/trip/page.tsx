@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Route, Clock, Gauge, Users, Pause, Play, Flag } from 'lucide-react';
+import { Route, Clock, Gauge, Users, Pause, Play, Flag, MapPin, AlertTriangle } from 'lucide-react';
 import RequireGroup from '@/components/dashboard/RequireGroup';
 import Topbar from '@/components/dashboard/Topbar';
 import GroupHealthCard from '@/components/dashboard/GroupHealthCard';
@@ -11,7 +11,10 @@ import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import ConfirmModal from '@/components/dashboard/ConfirmModal';
 import SosButton from '@/components/dashboard/SosButton';
 import LiveMap from '@/components/map/LiveMap';
-import { groupService } from '@/lib/mock/groupService';
+import { groupService } from '@/lib/group/groupService';
+import { friendlyErrorMessage } from '@/lib/api/errors';
+import { useTripLocationSharing } from '@/lib/geo/useTripLocationSharing';
+import { GEO_ERROR_MESSAGES } from '@/lib/geo/useGeolocation';
 import type { Group } from '@/lib/mock/types';
 
 function useElapsedMinutes(startedAt: number) {
@@ -31,14 +34,27 @@ function TripContent({ group }: { group: Group }) {
   const router = useRouter();
   const [showEndModal, setShowEndModal] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [endError, setEndError] = useState<string | null>(null);
   const elapsedMin = useElapsedMinutes(group.trip.startedAt);
   const avgSpeed = elapsedMin > 0 ? Math.round((group.trip.distanceKm / elapsedMin) * 60) : 0;
   const onlineCount = group.members.filter((m) => m.online).length;
 
+  // Shares this device's live position with the group while the trip is
+  // genuinely in progress — "paused" (a client-only concept, see
+  // RallyGroupService.pauseTrip's docstring) stops it without touching
+  // the trip's real ACTIVE status on the backend.
+  const { error: geoError } = useTripLocationSharing(!group.paused);
+
   const handleEndTrip = async () => {
     setEnding(true);
-    await groupService.endTrip();
-    router.push('/dashboard/trip-summary');
+    setEndError(null);
+    try {
+      const summary = await groupService.endTrip();
+      router.push(`/dashboard/trip-summary?id=${summary.id}`);
+    } catch (err) {
+      setEndError(friendlyErrorMessage(err));
+      setEnding(false);
+    }
   };
 
   const handleTogglePause = () => {
@@ -51,6 +67,13 @@ function TripContent({ group }: { group: Group }) {
       <Topbar group={group} />
 
       <div className="flex-1 p-4 md:p-6 space-y-5">
+        {geoError && !group.paused && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-medium">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            {GEO_ERROR_MESSAGES[geoError]}
+          </div>
+        )}
+
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <span
@@ -112,7 +135,7 @@ function TripContent({ group }: { group: Group }) {
           ))}
         </div>
 
-        <ActivityFeed members={group.members} />
+        <ActivityFeed members={group.members} alerts={group.alerts} />
       </div>
 
       <SosButton />
@@ -125,6 +148,7 @@ function TripContent({ group }: { group: Group }) {
           confirmLabel="End Trip"
           busyLabel="Ending…"
           busy={ending}
+          error={endError}
           onCancel={() => setShowEndModal(false)}
           onConfirm={handleEndTrip}
         />

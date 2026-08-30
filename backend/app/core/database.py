@@ -41,7 +41,22 @@ def _build_engine():
         # a .env is configured, which the test suite relies on.
         logger.warning("DATABASE_URL is not set - database calls will fail until it is configured.")
         return None
-    return create_engine(_normalize_driver(settings.DATABASE_URL), pool_pre_ping=True, future=True)
+    return create_engine(
+        _normalize_driver(settings.DATABASE_URL),
+        # Part 6 — Database resilience: a bounded, reused connection pool
+        # instead of one connection per request. pool_pre_ping issues a
+        # cheap liveness check before handing out a pooled connection, so
+        # a connection Supabase silently dropped server-side is replaced
+        # rather than surfacing as a confusing mid-query failure;
+        # pool_recycle backs that up by proactively retiring connections
+        # older than DATABASE_POOL_RECYCLE_SECONDS regardless.
+        pool_pre_ping=True,
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        pool_timeout=settings.DATABASE_POOL_TIMEOUT_SECONDS,
+        pool_recycle=settings.DATABASE_POOL_RECYCLE_SECONDS,
+        future=True,
+    )
 
 
 engine = _build_engine()
@@ -77,6 +92,14 @@ def session_scope() -> Generator[Session, None, None]:
         raise
     finally:
         db.close()
+
+
+def close_database() -> None:
+    """Call once during app shutdown (Part 12 — graceful shutdown): disposes
+    the connection pool so every pooled connection is closed cleanly
+    rather than left for the OS to clean up when the process exits."""
+    if engine is not None:
+        engine.dispose()
 
 
 def check_database_connection() -> bool:

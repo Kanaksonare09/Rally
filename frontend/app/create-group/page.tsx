@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Minus, Plus, Copy, Check, ArrowRight, Users } from 'lucide-react';
-import { groupService, buildPreviewGroup } from '@/lib/mock/groupService';
+import { Minus, Plus, Copy, Check, ArrowRight, Users, AlertCircle } from 'lucide-react';
+import { groupService, buildPreviewGroup } from '@/lib/group/groupService';
+import { friendlyErrorMessage } from '@/lib/api/errors';
 import LiveMap from '@/components/map/LiveMap';
 
 const DESTINATIONS = ['Solang Valley', 'Rohtang Pass', 'Kasol', 'Manali', 'Leh Ladakh', 'Spiti Valley'];
@@ -18,6 +19,7 @@ export default function CreateGroupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filteredDestinations = DESTINATIONS.filter((d) =>
     d.toLowerCase().includes(destination.toLowerCase())
@@ -27,9 +29,15 @@ export default function CreateGroupPage() {
     e.preventDefault();
     if (!name.trim() || !destination.trim() || submitting) return;
     setSubmitting(true);
-    const group = await groupService.createGroup({ name: name.trim(), destination: destination.trim(), maxMembers });
-    setSubmitting(false);
-    setJoinCode(group.joinCode);
+    setError(null);
+    try {
+      const group = await groupService.createGroup({ name: name.trim(), destination: destination.trim(), maxMembers });
+      setJoinCode(group.joinCode);
+    } catch (err) {
+      setError(friendlyErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCopy = () => {
@@ -144,6 +152,12 @@ export default function CreateGroupPage() {
                   </button>
                 </div>
               </div>
+
+              {error && (
+                <p className="flex items-center gap-1.5 text-xs text-red-400 px-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
+                </p>
+              )}
 
               <button
                 type="submit"

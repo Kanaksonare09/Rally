@@ -1,6 +1,7 @@
 import time
 from typing import Optional
 
+import fakeredis
 import jwt
 import pytest
 
@@ -8,6 +9,15 @@ from app.core.config import settings
 
 TEST_JWT_SECRET = "test-only-secret-do-not-use-in-production"
 DEFAULT_TEST_USER_ID = "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.fixture
+def fake_redis():
+    """A fresh in-memory Redis per test — no real Redis server required
+    (see backend README). `decode_responses=True` matches the real client
+    built in app/core/redis.py, so values round-trip as str, not bytes."""
+    client = fakeredis.FakeAsyncRedis(decode_responses=True)
+    yield client
 
 
 @pytest.fixture(autouse=True)

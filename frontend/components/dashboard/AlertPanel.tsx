@@ -22,7 +22,7 @@ export default function AlertPanel({ alerts }: { alerts: AlertItem[] }) {
       {alerts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
           <BellOff className="w-6 h-6 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">No alerts. Everyone's on track.</p>
+          <p className="text-xs text-muted-foreground">No alerts. Everyone&apos;s on track.</p>
         </div>
       ) : (
         <div className="space-y-2.5">

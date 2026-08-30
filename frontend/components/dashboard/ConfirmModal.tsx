@@ -17,6 +17,7 @@ export default function ConfirmModal({
   onConfirm,
   success,
   successContent,
+  error,
 }: {
   icon: React.ElementType;
   iconColorClass?: string;
@@ -32,6 +33,10 @@ export default function ConfirmModal({
   onConfirm: () => void;
   success?: boolean;
   successContent?: React.ReactNode;
+  /** Shown below the description when a previous confirm attempt failed
+   * — the request itself already happened and was rejected by the
+   * backend, so this always reflects a real error, never a guess. */
+  error?: string | null;
 }) {
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4">
@@ -55,9 +60,10 @@ export default function ConfirmModal({
               <Icon className={`w-6 h-6 ${iconColorClass}`} />
             </div>
             <h2 className="text-base font-semibold text-foreground mb-1.5">{title}</h2>
-            <p className="text-sm text-muted-foreground mb-6">{description}</p>
+            <p className="text-sm text-muted-foreground mb-2">{description}</p>
+            {error && <p className="text-xs text-red-400 mb-4">{error}</p>}
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mt-4">
               <button
                 onClick={onCancel}
                 disabled={busy}

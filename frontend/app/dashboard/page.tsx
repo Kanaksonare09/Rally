@@ -36,7 +36,7 @@ export default function DashboardPage() {
         return (
           <div className="min-h-screen flex flex-col bg-[#050505] text-white">
             {/* Topbar Header */}
-            <Topbar group={group} online={online} />
+            <Topbar group={group} />
 
             {/* Offline Alert Bar */}
             {!online && (
@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 <NeedsAttentionPanel alerts={group.alerts} />
 
                 {/* Live Activity Stream */}
-                <ActivityFeed members={group.members} />
+                <ActivityFeed members={group.members} alerts={group.alerts} />
               </div>
 
               {/* OPERATIONAL SECTION 2: Members Snapshot & Trip Overview */}

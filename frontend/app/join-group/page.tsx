@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { groupService } from '@/lib/mock/groupService';
+import { groupService } from '@/lib/group/groupService';
+import { friendlyErrorMessage } from '@/lib/api/errors';
 
 type Status = 'idle' | 'loading' | 'invalid' | 'success';
 
@@ -25,7 +26,7 @@ export default function JoinGroupPage() {
       setTimeout(() => router.push('/dashboard'), 900);
     } catch (err) {
       setStatus('invalid');
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(friendlyErrorMessage(err));
     }
   };
 
@@ -48,7 +49,7 @@ export default function JoinGroupPage() {
               <CheckCircle2 className="w-7 h-7 text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-foreground">You're in</h1>
+              <h1 className="text-xl font-semibold text-foreground">You&apos;re in</h1>
               <p className="text-sm text-muted-foreground mt-1">Taking you to your dashboard…</p>
             </div>
           </div>

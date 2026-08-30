@@ -6,13 +6,16 @@ import Topbar from '@/components/dashboard/Topbar';
 import AlertFilterBar, { type AlertFilter } from '@/components/dashboard/AlertFilterBar';
 import AlertRow from '@/components/dashboard/AlertRow';
 import AlertDetailPanel from '@/components/dashboard/AlertDetailPanel';
-import { groupService } from '@/lib/mock/groupService';
+import { resolveAlert } from '@/lib/api/alerts';
+import { friendlyErrorMessage } from '@/lib/api/errors';
 import type { AlertItem } from '@/lib/mock/types';
 import { BellOff } from 'lucide-react';
 
 export default function AlertsPage() {
   const [filter, setFilter] = useState<AlertFilter>('all');
   const [selected, setSelected] = useState<AlertItem | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
 
   return (
     <RequireGroup>
@@ -31,9 +34,28 @@ export default function AlertsPage() {
           return a.type === filter;
         });
 
-        const handleResolve = (id: string) => {
-          groupService.resolveAlert(id);
-          setSelected((prev) => (prev ? { ...prev, status: 'resolved' } : prev));
+        // Phase 13, item 18: never mark an alert resolved locally — send
+        // the request, wait for the backend to confirm, then let the
+        // real (WebSocket-refreshed) group.alerts state drive the UI.
+        // On success we simply close the panel rather than guessing at
+        // the resolved shape ourselves; the list behind it re-renders
+        // from the real data as soon as RallyGroupService refreshes.
+        const handleResolve = async (id: string) => {
+          setResolving(true);
+          setResolveError(null);
+          try {
+            await resolveAlert(id);
+            setResolving(false);
+            setSelected(null);
+          } catch (err) {
+            setResolving(false);
+            setResolveError(friendlyErrorMessage(err));
+          }
+        };
+
+        const closePanel = () => {
+          setSelected(null);
+          setResolveError(null);
         };
 
         return (
@@ -70,14 +92,27 @@ export default function AlertsPage() {
               ) : (
                 <div className="space-y-2.5">
                   {filtered.map((alert) => (
-                    <AlertRow key={alert.id} alert={alert} onClick={() => setSelected(alert)} />
+                    <AlertRow
+                      key={alert.id}
+                      alert={alert}
+                      onClick={() => {
+                        setResolveError(null);
+                        setSelected(alert);
+                      }}
+                    />
                   ))}
                 </div>
               )}
             </div>
 
             {selected && (
-              <AlertDetailPanel alert={selected} onClose={() => setSelected(null)} onResolve={handleResolve} />
+              <AlertDetailPanel
+                alert={selected}
+                onClose={closePanel}
+                onResolve={handleResolve}
+                resolving={resolving}
+                error={resolveError}
+              />
             )}
           </div>
         );

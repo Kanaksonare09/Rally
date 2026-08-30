@@ -37,7 +37,7 @@ export default function SafetyEditorial() {
           </h2>
 
           <p className="text-base sm:text-lg text-white/60 font-normal leading-relaxed max-w-xl pt-2">
-            RALLY stays quiet when everything is fine and becomes visible when something isn't.
+            RALLY stays quiet when everything is fine and becomes visible when something isn&apos;t.
           </p>
         </div>
 

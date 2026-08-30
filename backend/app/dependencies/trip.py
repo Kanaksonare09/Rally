@@ -66,3 +66,16 @@ def require_trip_creator_or_leader(pair: Tuple[Trip, GroupMember] = Depends(get_
             detail="Only the trip creator or the group leader can perform this action.",
         )
     return trip
+
+
+def require_trip_leader(pair: Tuple[Trip, GroupMember] = Depends(get_trip_membership)) -> Trip:
+    """Strictly the group LEADER — deliberately narrower than
+    require_trip_creator_or_leader(). Route creation/replacement (Phase 9)
+    is a leader-only action regardless of who started the trip."""
+    trip, member = pair
+    if member.role != MemberRole.LEADER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the group leader can perform this action.",
+        )
+    return trip

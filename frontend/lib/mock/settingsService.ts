@@ -3,7 +3,10 @@ import type { Settings } from './types';
 const STORAGE_KEY = 'rally:settings';
 
 export const DEFAULT_SETTINGS: Settings = {
-  profile: { name: 'Keshav', email: 'keshav@rally.app' },
+  // Never a fake fixed identity shown to every visitor (Phase 13, item
+  // 44/51) — the settings page seeds these from the real authenticated
+  // Supabase user on first load instead.
+  profile: { name: '', email: '' },
   notifications: {
     alerts: true,
     sos: true,

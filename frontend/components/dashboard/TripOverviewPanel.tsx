@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation';
 import { Navigation, Users, BellRing, Map, Flag, ArrowRight } from 'lucide-react';
 import type { Group } from '@/lib/mock/types';
 import ConfirmModal from './ConfirmModal';
-import { groupService } from '@/lib/mock/groupService';
+import { groupService } from '@/lib/group/groupService';
+import { friendlyErrorMessage } from '@/lib/api/errors';
 
 export default function TripOverviewPanel({ group }: { group: Group }) {
   const router = useRouter();
   const [showEndModal, setShowEndModal] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [endError, setEndError] = useState<string | null>(null);
 
   const me = group.members.find((m) => m.isCurrentUser);
   const isLeader = me?.role === 'Leader';
@@ -22,8 +24,14 @@ export default function TripOverviewPanel({ group }: { group: Group }) {
 
   const handleEndTrip = async () => {
     setEnding(true);
-    await groupService.endTrip();
-    router.push('/dashboard/trip-summary');
+    setEndError(null);
+    try {
+      const summary = await groupService.endTrip();
+      router.push(`/dashboard/trip-summary?id=${summary.id}`);
+    } catch (err) {
+      setEndError(friendlyErrorMessage(err));
+      setEnding(false);
+    }
   };
 
   return (
@@ -130,6 +138,7 @@ export default function TripOverviewPanel({ group }: { group: Group }) {
           confirmLabel="End Trip"
           busyLabel="Ending…"
           busy={ending}
+          error={endError}
           onCancel={() => setShowEndModal(false)}
           onConfirm={handleEndTrip}
         />

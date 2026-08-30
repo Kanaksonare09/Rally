@@ -1,24 +1,57 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Bell, MapPin, ShieldHalf, Palette, KeyRound, LogOut } from 'lucide-react';
 import Topbar from '@/components/dashboard/Topbar';
 import Toggle from '@/components/dashboard/Toggle';
 import { SettingsSection, SettingsRow } from '@/components/dashboard/SettingsSection';
-import { useGroup } from '@/lib/mock/useGroup';
+import RequireAuth from '@/components/dashboard/RequireAuth';
+import { useGroup } from '@/lib/group/useGroup';
 import { useSettings } from '@/lib/mock/useSettings';
-import { groupService } from '@/lib/mock/groupService';
+import { groupService } from '@/lib/group/groupService';
+import { useAuth } from '@/lib/auth/AuthProvider';
+import DemoModePanel from '@/components/dashboard/DemoModePanel';
 
 const selectClass =
   'bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors';
 
 export default function SettingsPage() {
+  return (
+    <RequireAuth>
+      <SettingsContent />
+    </RequireAuth>
+  );
+}
+
+function SettingsContent() {
   const router = useRouter();
   const { group } = useGroup();
+  const { user, signOut } = useAuth();
   const { settings, update } = useSettings();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = () => {
+  // Never a fabricated identity — seed the profile display from the
+  // real authenticated Supabase user the first time settings load with
+  // nothing saved locally yet (Phase 13, item 44/51).
+  useEffect(() => {
+    if (!user) return;
+    if (!settings.profile.email && !settings.profile.name) {
+      update({
+        profile: {
+          name: (user.user_metadata?.full_name as string | undefined) ?? user.email?.split('@')[0] ?? 'You',
+          email: user.email ?? '',
+        },
+      });
+    }
+    // Only re-run if the user identity itself changes, not on every settings update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
     groupService.leaveGroup();
+    await signOut();
     router.push('/');
   };
 
@@ -35,30 +68,34 @@ export default function SettingsPage() {
         <SettingsSection title="Profile" icon={User}>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-rally-blue/15 border border-rally-blue/30 text-rally-blue font-bold flex items-center justify-center text-lg shrink-0">
-              {settings.profile.name.charAt(0)}
+              {(settings.profile.name || 'Y').charAt(0).toUpperCase()}
             </div>
             <button
               type="button"
-              className="text-sm font-semibold text-rally-blue hover:underline"
+              disabled
+              title="Not available yet"
+              className="text-sm font-semibold text-muted-foreground cursor-not-allowed"
             >
               Change avatar
             </button>
           </div>
-          <SettingsRow label="Name">
+          <SettingsRow label="Name" description="Stored on this device only — not synced across devices yet">
             <input
               value={settings.profile.name}
               onChange={(e) => update({ profile: { ...settings.profile, name: e.target.value } })}
               className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground text-right focus:outline-none focus:border-rally-blue transition-colors w-40"
             />
           </SettingsRow>
-          <SettingsRow label="Email">
+          <SettingsRow label="Email" description="From your account — sign-in email can't be changed here">
             <input
               value={settings.profile.email}
-              onChange={(e) => update({ profile: { ...settings.profile, email: e.target.value } })}
-              className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground text-right focus:outline-none focus:border-rally-blue transition-colors w-52"
+              readOnly
+              className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-muted-foreground text-right w-52 cursor-not-allowed"
             />
           </SettingsRow>
         </SettingsSection>
+
+        <DemoModePanel />
 
         <SettingsSection title="Notifications" icon={Bell}>
           <SettingsRow label="Alert notifications" description="Route deviations, separation, and stops">
@@ -190,9 +227,10 @@ export default function SettingsPage() {
           <SettingsRow label="Sign out of RALLY">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors"
+              disabled={loggingOut}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-60"
             >
-              <LogOut className="w-3.5 h-3.5" /> Logout
+              <LogOut className="w-3.5 h-3.5" /> {loggingOut ? 'Signing out…' : 'Logout'}
             </button>
           </SettingsRow>
         </SettingsSection>

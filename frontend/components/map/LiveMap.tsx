@@ -3,7 +3,7 @@
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { LocateFixed, Plus, Minus, Maximize, Route as RouteIcon } from 'lucide-react';
+import { LocateFixed, Plus, Minus, Maximize, Route as RouteIcon, Layers, Check } from 'lucide-react';
 import type { Map as LeafletMap } from 'leaflet';
 import type { AlertItem, Group } from '@/lib/mock/types';
 import { STATUS_STYLE } from '@/components/dashboard/status';
@@ -14,6 +14,45 @@ const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ss
 const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
 const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), { ssr: false });
 const MapBridge = dynamic(() => import('./MapBridge'), { ssr: false });
+
+export type MapStyleKey = 'google_roadmap' | 'google_satellite' | 'google_hybrid' | 'google_terrain' | 'osm';
+
+interface MapStyleConfig {
+  name: string;
+  url: string;
+  attribution: string;
+  className?: string;
+}
+
+const MAP_STYLES: Record<MapStyleKey, MapStyleConfig> = {
+  google_roadmap: {
+    name: 'Google Maps (Dark)',
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+    className: 'map-tiles-dark',
+  },
+  google_satellite: {
+    name: 'Google Satellite',
+    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+  },
+  google_hybrid: {
+    name: 'Google Hybrid',
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+  },
+  google_terrain: {
+    name: 'Google Terrain',
+    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+  },
+  osm: {
+    name: 'OpenStreetMap',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap contributors',
+    className: 'map-tiles-dark',
+  },
+};
 
 export default function LiveMap({
   group,
@@ -27,6 +66,8 @@ export default function LiveMap({
   const [mounted, setMounted] = useState(false);
   const [L, setL] = useState<any>(null);
   const [showRoute, setShowRoute] = useState(true);
+  const [currentStyleKey, setCurrentStyleKey] = useState<MapStyleKey>('google_roadmap');
+  const [showLayerMenu, setShowLayerMenu] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -38,10 +79,12 @@ export default function LiveMap({
     return (
       <div className="w-full h-full min-h-[420px] rounded-2xl border border-border bg-card flex flex-col items-center justify-center text-muted-foreground gap-3">
         <div className="w-8 h-8 border-2 border-rally-blue border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-medium">Initializing live map…</p>
+        <p className="text-sm font-medium">Initializing Google map…</p>
       </div>
     );
   }
+
+  const activeStyle = MAP_STYLES[currentStyleKey];
 
   const memberIcon = (name: string, hex: string, isMe: boolean) =>
     L.divIcon({
@@ -106,12 +149,6 @@ export default function LiveMap({
     mapRef.current = map;
     const pts = group.members.map((m) => [m.lat, m.lng] as [number, number]);
     pts.push([group.destinationLat, group.destinationLng]);
-    // animate: false — an animated transition kicked off the instant the
-    // map mounts can outlive a React 18 StrictMode dev double-mount
-    // (mount -> cleanup -> mount), leaving a transitionend callback that
-    // fires against an already-torn-down map instance ("Cannot read
-    // properties of undefined (reading '_leaflet_pos')"). User-triggered
-    // fit/locate below stay animated since there's no such race there.
     map.fitBounds(pts, { padding: [70, 70], maxZoom: 16, animate: false });
   };
 
@@ -125,8 +162,11 @@ export default function LiveMap({
     <div className="relative w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-border">
       <MapContainer center={center} zoom={12} zoomControl={false} scrollWheelZoom style={{ width: '100%', height: '100%' }}>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors'
+          key={currentStyleKey}
+          url={activeStyle.url}
+          attribution={activeStyle.attribution}
+          className={activeStyle.className || ''}
+          maxZoom={20}
         />
         <MapBridge onReady={handleMapReady} />
 
@@ -184,6 +224,7 @@ export default function LiveMap({
         <MapControlButton onClick={handleLocateMe} label="Locate me">
           <LocateFixed className="w-4 h-4" />
         </MapControlButton>
+
         <div className="flex flex-col rounded-xl overflow-hidden border border-white/10 bg-[#0A0A0A]/90 backdrop-blur">
           <button
             onClick={() => mapRef.current?.zoomIn()}
@@ -201,12 +242,54 @@ export default function LiveMap({
             <Minus className="w-4 h-4" />
           </button>
         </div>
+
         <MapControlButton onClick={handleFitGroup} label="Fit group">
           <Maximize className="w-4 h-4" />
         </MapControlButton>
+
         <MapControlButton onClick={() => setShowRoute((v) => !v)} label="Toggle route" active={showRoute}>
           <RouteIcon className="w-4 h-4" />
         </MapControlButton>
+
+        {/* Google Map Layer Switcher Button */}
+        <div className="relative">
+          <MapControlButton
+            onClick={() => setShowLayerMenu((v) => !v)}
+            label="Map layers"
+            active={showLayerMenu}
+          >
+            <Layers className="w-4 h-4" />
+          </MapControlButton>
+
+          {showLayerMenu && (
+            <div className="absolute right-12 top-0 w-48 rounded-xl border border-white/10 bg-[#0A0A0A]/95 backdrop-blur shadow-2xl p-1.5 flex flex-col gap-1 text-xs z-[1010]">
+              <div className="px-2 py-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                Map Provider
+              </div>
+              {(Object.keys(MAP_STYLES) as MapStyleKey[]).map((key) => {
+                const conf = MAP_STYLES[key];
+                const isSelected = key === currentStyleKey;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setCurrentStyleKey(key);
+                      setShowLayerMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg font-medium transition-colors text-left ${
+                      isSelected
+                        ? 'bg-rally-blue/20 text-rally-blue border border-rally-blue/40'
+                        : 'text-neutral-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{conf.name}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-rally-blue" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -238,3 +321,4 @@ function MapControlButton({
     </button>
   );
 }
+

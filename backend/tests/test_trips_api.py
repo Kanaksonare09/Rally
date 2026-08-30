@@ -157,15 +157,27 @@ def test_creator_is_stored_as_authenticated_user_not_request_body(mock_create, a
 # ---- list group trips ----------------------------------------------------
 
 
-@patch("app.api.trips.trip_service.list_group_trips")
+@patch("app.api.trips.trip_history.list_group_trip_history")
 def test_group_member_can_list_group_trips(mock_list, as_group_member):
-    mock_list.return_value = [make_mock_trip(status=TripStatus.COMPLETED)]
+    from app.schemas.analytics import TripHistoryItem, TripHistoryResponse
+
+    mock_list.return_value = TripHistoryResponse(
+        items=[
+            TripHistoryItem(
+                trip_id=TRIP_ID, name="Solang Valley", status="COMPLETED", started_at=None, ended_at=None,
+                member_count=1, distance_meters=None,
+            )
+        ],
+        total=1, limit=20, offset=0,
+    )
     token = make_token(sub=DEFAULT_TEST_USER_ID)
 
     response = client.get(f"{API}/groups/{GROUP_ID}/trips", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    body = response.json()
+    assert len(body["items"]) == 1
+    assert body["total"] == 1
 
 
 def test_non_member_cannot_list_group_trips(no_group_membership):
@@ -236,10 +248,14 @@ def test_starting_trip_when_group_already_has_active_trip_returns_active_trip_ex
     response = client.post(f"{API}/trips/{TRIP_ID}/start", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 409
-    assert response.json() == {
-        "success": False,
-        "error": {"code": "ACTIVE_TRIP_EXISTS", "message": "This group already has an active trip."},
-    }
+    body = response.json()
+    # Phase 11 adds a request_id to every error body (see
+    # app/core/middleware.py) — checked field-by-field here, not by exact
+    # dict equality, since that id is different on every request.
+    assert body["success"] is False
+    assert body["error"]["code"] == "ACTIVE_TRIP_EXISTS"
+    assert body["error"]["message"] == "This group already has an active trip."
+    assert "request_id" in body["error"]
 
 
 # ---- end trip --------------------------------------------------------
@@ -310,3 +326,118 @@ def test_plain_member_cannot_cancel_someone_elses_trip():
 def test_health_endpoint_still_works():
     response = client.get(f"{API}/health")
     assert response.status_code == 200
+
+
+# ---- Phase 9: route lifecycle hooks ---------------------------------------
+
+
+@patch("app.api.trips.route_service.activate_route_sync")
+@patch("app.api.trips.trip_service.start_trip")
+def test_starting_trip_activates_its_route(mock_start, mock_activate, as_trip_member):
+    mock_start.return_value = make_mock_trip(status=TripStatus.ACTIVE, started_at=datetime.now(timezone.utc))
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    response = client.post(f"{API}/trips/{TRIP_ID}/start", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    mock_activate.assert_called_once_with(mock_start.call_args.args[0], TRIP_ID)
+
+
+@patch("app.api.trips.route_service.complete_route_sync")
+@patch("app.api.trips.trip_service.end_trip")
+def test_ending_trip_completes_its_route(mock_end, mock_complete, as_trip_member):
+    mock_end.return_value = make_mock_trip(status=TripStatus.COMPLETED, ended_at=datetime.now(timezone.utc))
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    response = client.post(f"{API}/trips/{TRIP_ID}/end", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    mock_complete.assert_called_once()
+    assert mock_complete.call_args.args[1] == TRIP_ID
+
+
+@patch("app.api.trips.route_service.cancel_route_sync")
+@patch("app.api.trips.trip_service.cancel_trip")
+def test_cancelling_trip_cancels_its_route(mock_cancel, mock_cancel_route, as_trip_creator_or_leader):
+    mock_cancel.return_value = make_mock_trip(status=TripStatus.CANCELLED)
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    response = client.post(f"{API}/trips/{TRIP_ID}/cancel", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    mock_cancel_route.assert_called_once()
+    assert mock_cancel_route.call_args.args[1] == TRIP_ID
+
+
+@patch("app.api.trips.route_service.activate_route_sync")
+@patch("app.api.trips.trip_service.start_trip")
+def test_starting_trip_with_no_route_is_unaffected(mock_start, mock_activate, as_trip_member):
+    """activate_route_sync is a no-op when there's no route — this test
+    only pins that starting a trip still succeeds and still calls it
+    unconditionally (the no-op behavior itself is unit-tested in
+    test_route_service.py)."""
+    mock_start.return_value = make_mock_trip(status=TripStatus.ACTIVE)
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    response = client.post(f"{API}/trips/{TRIP_ID}/start", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert mock_activate.called
+
+
+@patch("app.api.trips.generate_snapshot_safely")
+@patch("app.api.trips.route_service.complete_route_sync")
+@patch("app.api.trips.trip_service.end_trip")
+def test_ending_trip_generates_analytics_snapshot(mock_end, mock_complete_route, mock_snapshot, as_trip_member):
+    mock_end.return_value = make_mock_trip(status=TripStatus.COMPLETED, ended_at=datetime.now(timezone.utc))
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    response = client.post(f"{API}/trips/{TRIP_ID}/end", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    mock_snapshot.assert_called_once()
+
+
+# ---- Phase 10: trip history --------------------------------------------
+
+
+def test_unauthenticated_user_cannot_list_trip_history():
+    response = client.get(f"{API}/users/me/trips")
+    assert response.status_code == 401
+
+
+@patch("app.api.trips.trip_history.list_user_trip_history")
+def test_authenticated_user_sees_their_trip_history(mock_list):
+    from app.schemas.analytics import TripHistoryResponse
+
+    mock_list.return_value = TripHistoryResponse(items=[], total=0, limit=20, offset=0)
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    response = client.get(f"{API}/users/me/trips", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "total": 0, "limit": 20, "offset": 0}
+
+
+@patch("app.api.trips.trip_history.list_user_trip_history")
+def test_trip_history_derives_user_id_from_token_not_query(mock_list):
+    """No user_id is accepted as a query/body parameter — the id passed
+    to the service always comes from the verified JWT."""
+    from app.schemas.analytics import TripHistoryResponse
+
+    mock_list.return_value = TripHistoryResponse(items=[], total=0, limit=20, offset=0)
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+
+    client.get(
+        f"{API}/users/me/trips?user_id={uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    called_user_id = mock_list.call_args.args[1]
+    assert called_user_id == USER_ID
+
+
+@patch("app.api.trips.trip_history.list_user_trip_history")
+def test_trip_history_limit_cannot_exceed_maximum(mock_list):
+    token = make_token(sub=DEFAULT_TEST_USER_ID)
+    response = client.get(f"{API}/users/me/trips?limit=1000000", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 422

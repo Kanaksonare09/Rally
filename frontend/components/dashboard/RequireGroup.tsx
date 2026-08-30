@@ -2,13 +2,28 @@
 
 import Link from 'next/link';
 import { Compass, Loader2 } from 'lucide-react';
-import { useGroup } from '@/lib/mock/useGroup';
+import { useGroup } from '@/lib/group/useGroup';
 import type { Group } from '@/lib/mock/types';
+import RequireAuth from './RequireAuth';
 
+/** Guards every /dashboard/* page that needs a live group: redirects to
+ * /login if there's no session (via RequireAuth — see its own docstring
+ * and the Known Issues note in the integration report about middleware-
+ * level/SSR protection being a possible future improvement), then shows
+ * the group-loading/empty states, then renders children with a real
+ * Group once one is available. */
 export default function RequireGroup({ children }: { children: (group: Group) => React.ReactNode }) {
-  const { group, loading } = useGroup();
+  return (
+    <RequireAuth>
+      <RequireGroupInner>{children}</RequireGroupInner>
+    </RequireAuth>
+  );
+}
 
-  if (loading) {
+function RequireGroupInner({ children }: { children: (group: Group) => React.ReactNode }) {
+  const { group, loading: groupLoading } = useGroup();
+
+  if (groupLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-muted-foreground">
         <Loader2 className="w-6 h-6 animate-spin" />

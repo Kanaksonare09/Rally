@@ -4,7 +4,9 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit_by_user
 from app.dependencies.auth import get_current_user_id
 from app.dependencies.group import require_group_member, require_group_leader
 from app.models.group_member import GroupMember
@@ -31,13 +33,25 @@ def create_group_endpoint(
     return group_service.create_group(db, uuid.UUID(user_id), group_data)
 
 
-@router.post("/join", response_model=GroupResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/join",
+    response_model=GroupResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(rate_limit_by_user("join_group", lambda: settings.JOIN_GROUP_RATE_LIMIT_PER_MINUTE))],
+)
 def join_group_endpoint(
     join_data: GroupJoin,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """Join a group using a join code."""
+    """Join a group using a join code. Rate-limited per user
+    (JOIN_GROUP_RATE_LIMIT_PER_MINUTE) — this is the one endpoint where a
+    caller is effectively guessing a secret, so it gets its own stricter
+    bound on top of the general API limit; see JOIN CODE PROTECTION in
+    the README. A removed member trying to rejoin gets the same generic
+    "cannot join this group" 403 as an inactive group, rather than a
+    message that confirms they were specifically removed — see
+    group_service.join_group."""
     return group_service.join_group(db, uuid.UUID(user_id), join_data.join_code)
 
 

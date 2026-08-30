@@ -16,6 +16,10 @@ class Trip(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "trips"
     __table_args__ = (
         Index("ix_trips_created_at", "created_at"),
+        # Group trip history (GET /groups/{group_id}/trips, Phase 10) always
+        # filters by group_id and sorts by created_at — this composite
+        # index serves that ordering directly instead of a sort-then-scan.
+        Index("ix_trips_group_created", "group_id", "created_at"),
         # Enforces "at most one ACTIVE trip per group" at the database level
         # so two concurrent requests can't both succeed — see trip_service.
         Index(

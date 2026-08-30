@@ -120,7 +120,7 @@ export default function LiveTrackingRedesign() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-6 text-sm sm:text-lg text-white/60 max-w-2xl font-normal leading-relaxed"
         >
-          One shared map for the whole trip — every member's position, your planned route, and the destination, all in one place.
+          One shared map for the whole trip — every member&apos;s position, your planned route, and the destination, all in one place.
         </motion.p>
 
         {/* Action CTA Buttons */}
@@ -271,13 +271,15 @@ export default function LiveTrackingRedesign() {
             <div className="relative w-full h-full max-w-4xl mx-auto flex items-center justify-center">
 
               {/* Member 1: Rahul (Lagging behind) */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${15 + (progress * 0.45)}%`, top: `${72 - (progress * 0.25)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.9)] animate-pulse" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-amber-500/40 text-[11px] font-mono text-amber-200 whitespace-nowrap backdrop-blur-md shadow-lg flex items-center gap-1.5">
+                  {/* Text labels hidden below sm — five nowrap badges on a
+                      narrow container collide regardless of their % spacing. */}
+                  <div className="hidden sm:flex px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-amber-500/40 text-[11px] font-mono text-amber-200 whitespace-nowrap backdrop-blur-md shadow-lg items-center gap-1.5">
                     <span className="font-semibold">Rahul</span>
                     <span className="text-[10px] text-amber-400/80">1 min behind</span>
                   </div>
@@ -285,13 +287,13 @@ export default function LiveTrackingRedesign() {
               </div>
 
               {/* Member 2: Keshav */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${30 + (progress * 0.5)}%`, top: `${58 - (progress * 0.3)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] font-mono text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg flex items-center gap-1.5">
+                  <div className="hidden sm:flex px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] font-mono text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg items-center gap-1.5">
                     <span className="font-semibold">Keshav</span>
                     <span className="text-[10px] text-white/50">Moving</span>
                   </div>
@@ -299,13 +301,13 @@ export default function LiveTrackingRedesign() {
               </div>
 
               {/* Member 3: Aditi */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${42 + (progress * 0.48)}%`, top: `${48 - (progress * 0.32)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] font-mono text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg flex items-center gap-1.5">
+                  <div className="hidden sm:flex px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] font-mono text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg items-center gap-1.5">
                     <span className="font-semibold">Aditi</span>
                     <span className="text-[10px] text-white/50">Moving</span>
                   </div>
@@ -332,13 +334,13 @@ export default function LiveTrackingRedesign() {
               </div>
 
               {/* Member 5: Priya */}
-              <div 
+              <div
                 className="absolute transition-all duration-700 ease-out"
                 style={{ left: `${68 + (progress * 0.38)}%`, top: `${26 - (progress * 0.28)}%` }}
               >
                 <div className="relative flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
-                  <div className="px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] font-mono text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg flex items-center gap-1.5">
+                  <div className="hidden sm:flex px-2.5 py-1 rounded-md bg-[#0A0D14]/90 border border-white/15 text-[11px] font-mono text-white/90 whitespace-nowrap backdrop-blur-md shadow-lg items-center gap-1.5">
                     <span className="font-semibold">Priya</span>
                     <span className="text-[10px] text-white/50">Moving</span>
                   </div>
@@ -424,7 +426,7 @@ export default function LiveTrackingRedesign() {
               EVERY POSITION TELLS PART OF THE STORY.
             </h2>
             <p className="text-xs sm:text-base text-white/60 font-normal leading-relaxed">
-              RALLY keeps each member's position, movement, and route context together so the group can understand where everyone is without constantly checking in.
+              RALLY keeps each member&apos;s position, movement, and route context together so the group can understand where everyone is without constantly checking in.
             </p>
           </div>
 
@@ -503,14 +505,14 @@ export default function LiveTrackingRedesign() {
             <h2 className="text-3xl sm:text-5xl font-medium tracking-tight text-white leading-[1.08]">
               NO MORE <br />
               <span className="font-serif italic font-normal text-white/85">
-                "WHERE ARE YOU?"
+                &quot;WHERE ARE YOU?&quot;
               </span>
             </h2>
           </div>
 
           <div className="w-full md:w-1/2 pt-2 md:pt-10">
             <p className="text-sm sm:text-lg text-white/70 font-normal leading-relaxed">
-              Everyone's position is already there — on the same map, on the same trip. No radio chatter, no text messages while driving, no constant pulling over to check in.
+              Everyone&apos;s position is already there — on the same map, on the same trip. No radio chatter, no text messages while driving, no constant pulling over to check in.
             </p>
           </div>
 
@@ -632,7 +634,7 @@ export default function LiveTrackingRedesign() {
               </span>
             </h2>
             <p className="text-xs sm:text-base text-white/60 font-normal leading-relaxed">
-              RALLY doesn't just show where the route was supposed to go. It preserves and reconstructs the actual journey that happened along the way.
+              RALLY doesn&apos;t just show where the route was supposed to go. It preserves and reconstructs the actual journey that happened along the way.
             </p>
           </div>
 
