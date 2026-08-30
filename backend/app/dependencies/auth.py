@@ -53,11 +53,6 @@ def get_current_user(
     )
 
 
-def get_current_user_id(user: AuthenticatedUser = Depends(get_current_user)) -> str:
-    """Thin wrapper for endpoints that only need the id, not the full user."""
-    return user.id
-
-
 def get_current_profile(
     user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -68,3 +63,8 @@ def get_current_profile(
         full_name_hint=user.full_name_hint,
         avatar_url_hint=user.avatar_url_hint,
     )
+
+
+def get_current_user_id(profile: Profile = Depends(get_current_profile)) -> str:
+    """Thin wrapper for endpoints that only need the id, ensuring the profile exists first."""
+    return str(profile.id)

@@ -4,9 +4,10 @@ import { AlertTriangle, ShieldAlert, Radio, MapPin, Users, Navigation2, Siren } 
 import type { AlertItem, AlertType } from '@/lib/mock/types';
 
 const SEVERITY_STYLE: Record<AlertItem['severity'], { color: string; bg: string; border: string }> = {
-  critical: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-  warning: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' },
-  info: { color: 'text-rally-blue', bg: 'bg-rally-blue/10', border: 'border-rally-blue/20' },
+  critical: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
+  high: { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
+  warning: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/30' },
+  info: { color: 'text-rally-blue', bg: 'bg-rally-blue/10', border: 'border-rally-blue/30' },
 };
 
 export const ALERT_TYPE_ICON: Record<AlertType, React.ElementType> = {

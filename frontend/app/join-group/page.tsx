@@ -100,11 +100,18 @@ export default function JoinGroupPage() {
               </button>
             </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-8">
-              <Link href="/create-group" className="font-semibold text-rally-blue hover:underline">
-                Create a new Rally instead
-              </Link>
-            </p>
+            <div className="text-center mt-8 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                <Link href="/create-group" className="font-semibold text-rally-blue hover:underline">
+                  Create a new Rally instead
+                </Link>
+              </p>
+              <p className="text-sm">
+                <Link href="/dashboard" className="font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                  Return to Dashboard
+                </Link>
+              </p>
+            </div>
           </>
         )}
       </div>

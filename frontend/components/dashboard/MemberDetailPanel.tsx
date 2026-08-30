@@ -32,7 +32,9 @@ export default function MemberDetailPanel({ member, onClose }: { member: Member;
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground">{member.name}</h2>
-            <p className="text-xs text-muted-foreground">{member.role}</p>
+            {member.role === 'Leader' && (
+              <p className="text-xs font-medium text-rally-blue mt-0.5">Rally Creator / Leader</p>
+            )}
           </div>
         </div>
 

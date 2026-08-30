@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Minus, Plus, Copy, Check, ArrowRight, Users, AlertCircle } from 'lucide-react';
-import { groupService, buildPreviewGroup } from '@/lib/group/groupService';
-import { friendlyErrorMessage } from '@/lib/api/errors';
+import { Minus, Plus, Copy, Check, ArrowRight, Users } from 'lucide-react';
+import { groupService, buildPreviewGroup } from '@/lib/mock/groupService';
 import LiveMap from '@/components/map/LiveMap';
 
 const DESTINATIONS = ['Solang Valley', 'Rohtang Pass', 'Kasol', 'Manali', 'Leh Ladakh', 'Spiti Valley'];
@@ -19,7 +18,6 @@ export default function CreateGroupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const filteredDestinations = DESTINATIONS.filter((d) =>
     d.toLowerCase().includes(destination.toLowerCase())
@@ -28,13 +26,14 @@ export default function CreateGroupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !destination.trim() || submitting) return;
+    
     setSubmitting(true);
-    setError(null);
     try {
       const group = await groupService.createGroup({ name: name.trim(), destination: destination.trim(), maxMembers });
       setJoinCode(group.joinCode);
-    } catch (err) {
-      setError(friendlyErrorMessage(err));
+    } catch (err: any) {
+      console.error('Failed to create group:', err);
+      alert(err.message || 'Failed to create group. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -153,12 +152,6 @@ export default function CreateGroupPage() {
                 </div>
               </div>
 
-              {error && (
-                <p className="flex items-center gap-1.5 text-xs text-red-400 px-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
-                </p>
-              )}
-
               <button
                 type="submit"
                 disabled={submitting}
@@ -168,6 +161,12 @@ export default function CreateGroupPage() {
                 {!submitting && <ArrowRight className="w-4 h-4" />}
               </button>
             </form>
+
+            <div className="mt-6 text-center">
+              <Link href="/dashboard" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                Return to Dashboard
+              </Link>
+            </div>
           </>
         ) : (
           <div className="space-y-6">

@@ -30,6 +30,7 @@ websockets>=12.0
 # configured weather provider only; also used by the test suite's
 # TestClient, so this was already an installed dependency before Phase 12. ---
 httpx>=0.27.0
+redis>=5.0.1
 
 # --- Testing ---
 pytest>=8.0.0

@@ -26,7 +26,6 @@ export default function MemberCard({ member, onClick }: { member: Member; onClic
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-            <p className="text-xs text-muted-foreground">{member.role}</p>
           </div>
         </div>
         <span className={`text-[11px] font-semibold px-2 py-1 rounded-full border ${style.bg} ${style.border} ${style.text} shrink-0`}>

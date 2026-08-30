@@ -1,158 +1,264 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Route, Clock, Gauge, Users, Pause, Play, Flag, MapPin, AlertTriangle } from 'lucide-react';
+import { MapPin, Navigation, Navigation2, Clock, Route as RouteIcon, AlertTriangle, ShieldCheck, Flag, Loader2, Users } from 'lucide-react';
 import RequireGroup from '@/components/dashboard/RequireGroup';
 import Topbar from '@/components/dashboard/Topbar';
-import GroupHealthCard from '@/components/dashboard/GroupHealthCard';
-import ActivityFeed from '@/components/dashboard/ActivityFeed';
-import ConfirmModal from '@/components/dashboard/ConfirmModal';
-import SosButton from '@/components/dashboard/SosButton';
 import LiveMap from '@/components/map/LiveMap';
-import { groupService } from '@/lib/group/groupService';
-import { friendlyErrorMessage } from '@/lib/api/errors';
-import { useTripLocationSharing } from '@/lib/geo/useTripLocationSharing';
-import { GEO_ERROR_MESSAGES } from '@/lib/geo/useGeolocation';
+import ConfirmModal from '@/components/dashboard/ConfirmModal';
+import { groupService } from '@/lib/mock/groupService';
+import { useLocation } from '@/hooks/useLocation';
 import type { Group } from '@/lib/mock/types';
+import { supabase } from '@/lib/supabase';
 
-function useElapsedMinutes(startedAt: number) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(interval);
-  }, []);
-  return Math.max(0, Math.round((now - startedAt) / 60_000));
-}
-
-export default function ActiveTripPage() {
-  return <RequireGroup>{(group) => <TripContent group={group} />}</RequireGroup>;
-}
+// Mock function to format duration
+const formatDuration = (min: number) => {
+  if (min < 60) return `~${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `~${h} hr ${m} min`;
+};
 
 function TripContent({ group }: { group: Group }) {
   const router = useRouter();
+  const { location, isTracking, error: locError } = useLocation();
   const [showEndModal, setShowEndModal] = useState(false);
   const [ending, setEnding] = useState(false);
-  const [endError, setEndError] = useState<string | null>(null);
-  const elapsedMin = useElapsedMinutes(group.trip.startedAt);
-  const avgSpeed = elapsedMin > 0 ? Math.round((group.trip.distanceKm / elapsedMin) * 60) : 0;
-  const onlineCount = group.members.filter((m) => m.online).length;
+  const [actualName, setActualName] = useState('User');
 
-  // Shares this device's live position with the group while the trip is
-  // genuinely in progress — "paused" (a client-only concept, see
-  // RallyGroupService.pauseTrip's docstring) stops it without touching
-  // the trip's real ACTIVE status on the backend.
-  const { error: geoError } = useTripLocationSharing(!group.paused);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setActualName(user.user_metadata?.full_name || user.user_metadata?.name || 'User');
+      }
+    });
+  }, []);
+
+  const me = group.members.find((m) => m.isCurrentUser);
 
   const handleEndTrip = async () => {
     setEnding(true);
-    setEndError(null);
-    try {
-      const summary = await groupService.endTrip();
-      router.push(`/dashboard/trip-summary?id=${summary.id}`);
-    } catch (err) {
-      setEndError(friendlyErrorMessage(err));
-      setEnding(false);
-    }
+    await groupService.endTrip();
+    router.push('/dashboard/history'); // Note: or trip-summary
   };
 
-  const handleTogglePause = () => {
-    if (group.paused) groupService.resumeTrip();
-    else groupService.pauseTrip();
+  const isActive = !group.paused;
+  
+  // Calculate mock elapsed/distance based on group
+  const elapsedMin = Math.round((Date.now() - group.trip.startedAt) / 60000) || 0;
+  
+  const renderGpsState = () => {
+    if (locError) return { text: 'GPS Unavailable', color: 'text-red-400', dot: 'bg-red-400' };
+    if (isTracking && location) {
+      if (location.accuracy > 50) return { text: 'Poor Accuracy', color: 'text-orange-400', dot: 'bg-orange-400' };
+      return { text: 'Tracking', color: 'text-emerald-400', dot: 'bg-emerald-400' };
+    }
+    if (isTracking && !location) return { text: 'Waiting for GPS', color: 'text-yellow-400', dot: 'bg-yellow-400 animate-pulse' };
+    return { text: 'GPS Off', color: 'text-muted-foreground', dot: 'bg-muted-foreground' };
   };
+
+  const gpsInfo = renderGpsState();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Topbar group={group} />
+    <div className="min-h-screen flex flex-col h-screen overflow-hidden bg-background">
+      <Topbar group={group} gpsState={isTracking ? (location ? 'active' : 'waiting') : (locError ? 'unavailable' : 'off')} />
 
-      <div className="flex-1 p-4 md:p-6 space-y-5">
-        {geoError && !group.paused && (
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-medium">
-            <MapPin className="w-3.5 h-3.5 shrink-0" />
-            {GEO_ERROR_MESSAGES[geoError]}
+      <div className="flex-1 p-4 md:p-6 flex flex-col gap-6 overflow-y-auto">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between shrink-0">
+          <h1 className="text-2xl font-semibold text-foreground">Live Trip</h1>
+          <div className="px-3 py-1.5 rounded-full bg-card border border-border flex items-center gap-1.5 text-xs font-semibold">
+            {isActive ? (
+              <><span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> <span className="text-emerald-400">Trip Active</span></>
+            ) : (
+              <><span className="w-2 h-2 rounded-full bg-muted-foreground" /> <span className="text-muted-foreground">Trip Not Active</span></>
+            )}
           </div>
-        )}
+        </div>
 
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wide px-2.5 py-1 rounded-full border mb-2 ${
-                group.paused
-                  ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
-                  : 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${group.paused ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
-              {group.paused ? 'PAUSED' : 'LIVE TRIP'}
-            </span>
-            <h1 className="text-xl font-semibold text-foreground">{group.name}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Started: {elapsedMin} minutes ago</p>
+        {/* Responsive layout */}
+        <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+          
+          {/* Map Section */}
+          <div className="lg:w-2/3 h-[50vh] lg:h-full min-h-[400px] shrink-0 lg:shrink rounded-2xl overflow-hidden border border-border bg-card">
+            {locError && (
+              <div className="absolute top-4 left-4 right-4 z-[1000] p-4 rounded-xl border border-red-500/30 bg-red-500/90 backdrop-blur-sm text-white shadow-lg flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-semibold mb-1">Location access denied</p>
+                  <p className="opacity-90">Location access is required for live tracking. Enable location access in your browser settings.</p>
+                </div>
+              </div>
+            )}
+            <LiveMap 
+              group={group} 
+              routeAlternatives={group.route && group.route.length > 0 ? [{ id: 'active', coordinates: group.route, selected: true }] : undefined}
+            />
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={handleTogglePause}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-white/5 transition-colors"
-            >
-              {group.paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              {group.paused ? 'Resume Trip' : 'Pause Trip'}
-            </button>
-            <Link
-              href="/dashboard/members"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-white/5 transition-colors"
-            >
-              <Users className="w-4 h-4" /> View Members
-            </Link>
+          {/* Status Cards */}
+          <div className="lg:w-1/3 flex flex-col gap-4 overflow-y-auto pr-1 pb-1">
+            
+            {/* TRIP */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <p className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Trip</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground truncate">{group.name}</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {group.destination ? (
+                    <>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Destination</p>
+                        <p className="text-sm font-medium text-foreground truncate">{group.destination}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Distance</p>
+                        <p className="text-sm font-medium text-foreground">{group.trip.distanceKm} km</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Estimated time</p>
+                        <p className="text-sm font-medium text-foreground">{formatDuration(group.trip.durationMin || 0)}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">No route selected</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* YOUR LOCATION */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <p className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Your Location</p>
+              
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${gpsInfo.dot}`} />
+                <span className={`text-sm font-semibold ${gpsInfo.color}`}>{gpsInfo.text}</span>
+              </div>
+
+              {location ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Accuracy</p>
+                    <p className="text-sm font-medium text-foreground">±{Math.round(location.accuracy)}m</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Speed</p>
+                    <p className="text-sm font-medium text-foreground">{(location.speed || 0).toFixed(1)} m/s</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Location unavailable.</p>
+              )}
+            </div>
+
+            {/* GROUP */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <p className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Group</p>
+              
+              <div className="flex items-center gap-2 text-sm text-foreground font-medium mb-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
+              </div>
+
+              {me && (
+                <div className="flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-rally-blue/15 border border-rally-blue/30 text-rally-blue font-bold flex items-center justify-center text-xs">
+                      {actualName.charAt(0)}
+                    </div>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card bg-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{actualName} <span className="text-muted-foreground text-xs ml-1">(You)</span></p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SAFETY */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <p className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Safety</p>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">No active alerts</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Your RALLY is currently active.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* END TRIP */}
             <button
               onClick={() => setShowEndModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/20 transition-colors"
+              className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-colors"
             >
               <Flag className="w-4 h-4" /> End Trip
             </button>
+
           </div>
         </div>
 
-        <div className="relative h-[55vh] min-h-[380px]">
-          <LiveMap group={group} showStart />
-          <div className="absolute top-4 left-4 z-[999]">
-            <GroupHealthCard group={group} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Distance', value: `${group.trip.distanceKm} km`, icon: Route },
-            { label: 'Duration', value: `${elapsedMin} min`, icon: Clock },
-            { label: 'Average Speed', value: `${avgSpeed} km/h`, icon: Gauge },
-            { label: 'Members', value: `${onlineCount}/${group.members.length}`, icon: Users },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl border border-border bg-card p-4">
-              <s.icon className="w-4 h-4 text-muted-foreground mb-2" />
-              <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
-              <p className="text-[11px] text-muted-foreground mt-1.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <ActivityFeed members={group.members} alerts={group.alerts} />
       </div>
-
-      <SosButton />
 
       {showEndModal && (
         <ConfirmModal
           icon={Flag}
-          title="End this Rally trip?"
-          description="This will end the trip for the whole group and take you to a trip summary."
+          title="End this trip?"
+          description="Are you sure you want to end the current RALLY trip?"
           confirmLabel="End Trip"
           busyLabel="Ending…"
           busy={ending}
-          error={endError}
           onCancel={() => setShowEndModal(false)}
           onConfirm={handleEndTrip}
         />
       )}
     </div>
+  );
+}
+
+export default function ActiveTripPage() {
+  return (
+    <RequireGroup>
+      {(group) => {
+        // STATE: TRIP NOT ACTIVE
+        if (group.paused && group.trip.distanceKm === 0) {
+          // Conceptually, if trip is paused/not active at start. 
+          // Let's assume paused means inactive for now.
+          return (
+            <div className="min-h-screen flex flex-col bg-background">
+              <Topbar group={group} gpsState="off" />
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-2xl bg-rally-blue/10 flex items-center justify-center mb-6">
+                  <Navigation className="w-8 h-8 text-rally-blue" />
+                </div>
+                <h1 className="text-2xl font-bold text-foreground mb-3">No active trip</h1>
+                <p className="text-muted-foreground mb-8 text-sm">
+                  Create/select a route and start a trip to see live tracking here.
+                </p>
+                <button
+                  onClick={() => window.location.href = '/dashboard/route'}
+                  className="px-6 py-3 rounded-xl bg-foreground text-background text-sm font-semibold hover:opacity-85 transition-opacity w-full"
+                >
+                  Go to Route
+                </button>
+              </div>
+            </div>
+          );
+        }
+        
+        return <TripContent group={group} />;
+      }}
+    </RequireGroup>
   );
 }

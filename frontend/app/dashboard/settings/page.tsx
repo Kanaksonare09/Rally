@@ -1,240 +1,328 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Bell, MapPin, ShieldHalf, Palette, KeyRound, LogOut } from 'lucide-react';
+import { X, LogOut, Check } from 'lucide-react';
 import Topbar from '@/components/dashboard/Topbar';
 import Toggle from '@/components/dashboard/Toggle';
-import { SettingsSection, SettingsRow } from '@/components/dashboard/SettingsSection';
-import RequireAuth from '@/components/dashboard/RequireAuth';
-import { useGroup } from '@/lib/group/useGroup';
+import { useGroup } from '@/lib/mock/useGroup';
 import { useSettings } from '@/lib/mock/useSettings';
-import { groupService } from '@/lib/group/groupService';
-import { useAuth } from '@/lib/auth/AuthProvider';
-import DemoModePanel from '@/components/dashboard/DemoModePanel';
-
-const selectClass =
-  'bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors';
+import { groupService } from '@/lib/mock/groupService';
+import { supabase } from '@/lib/supabase';
+import { createPortal } from 'react-dom';
 
 export default function SettingsPage() {
-  return (
-    <RequireAuth>
-      <SettingsContent />
-    </RequireAuth>
-  );
-}
-
-function SettingsContent() {
   const router = useRouter();
   const { group } = useGroup();
-  const { user, signOut } = useAuth();
   const { settings, update } = useSettings();
-  const [loggingOut, setLoggingOut] = useState(false);
 
-  // Never a fabricated identity — seed the profile display from the
-  // real authenticated Supabase user the first time settings load with
-  // nothing saved locally yet (Phase 13, item 44/51).
+  const [actualName, setActualName] = useState(settings.profile.name);
+  const [actualEmail, setActualEmail] = useState(settings.profile.email);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editError, setEditError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    if (!user) return;
-    if (!settings.profile.email && !settings.profile.name) {
-      update({
-        profile: {
-          name: (user.user_metadata?.full_name as string | undefined) ?? user.email?.split('@')[0] ?? 'You',
-          email: user.email ?? '',
-        },
-      });
-    }
-    // Only re-run if the user identity itself changes, not on every settings update.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setActualEmail(user.email || '');
+        setActualName(user.user_metadata?.full_name || user.user_metadata?.name || 'User');
+      }
+    });
+  }, []);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const handleLogout = async () => {
-    setLoggingOut(true);
+    await supabase.auth.signOut();
     groupService.leaveGroup();
-    await signOut();
-    router.push('/');
+    router.push('/login');
+  };
+
+  const handleSaveProfile = async () => {
+    const trimmed = editName.trim();
+    if (!trimmed) {
+      setEditError('Display name cannot be empty.');
+      return;
+    }
+    if (trimmed.length > 50) {
+      setEditError('Display name is too long.');
+      return;
+    }
+    setEditError('');
+    setIsSaving(true);
+    
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: trimmed }
+    });
+
+    setIsSaving(false);
+
+    if (error) {
+      setEditError('Unable to save changes. Please try again.');
+    } else {
+      setActualName(trimmed);
+      update({ profile: { ...settings.profile, name: trimmed } });
+      setIsEditModalOpen(false);
+      showToast('Profile updated');
+    }
+  };
+
+  const handleLocationManage = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        () => showToast('Location permission granted'),
+        () => showToast('Location permission denied or unavailable')
+      );
+    } else {
+      showToast('Geolocation not supported by this browser');
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background relative pb-8">
       <Topbar group={group} />
 
-      <div className="flex-1 p-4 md:p-6 max-w-2xl space-y-5">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 space-y-8 max-w-2xl mx-auto w-full">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your profile, alerts, and safety preferences.</p>
+          <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage your account and RALLY preferences</p>
         </div>
 
-        <SettingsSection title="Profile" icon={User}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-rally-blue/15 border border-rally-blue/30 text-rally-blue font-bold flex items-center justify-center text-lg shrink-0">
-              {(settings.profile.name || 'Y').charAt(0).toUpperCase()}
+        {/* ACCOUNT */}
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Account</h2>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-rally-blue/15 border border-rally-blue/30 text-rally-blue font-bold flex items-center justify-center text-lg shrink-0">
+                  {actualName ? actualName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <p className="text-base font-bold text-foreground">{actualName}</p>
+                  <p className="text-sm text-muted-foreground">{actualEmail}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setEditName(actualName);
+                  setEditError('');
+                  setIsEditModalOpen(true);
+                }}
+                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-foreground hover:bg-white/10 transition-colors shrink-0 w-full sm:w-auto"
+              >
+                Edit Profile
+              </button>
             </div>
-            <button
-              type="button"
-              disabled
-              title="Not available yet"
-              className="text-sm font-semibold text-muted-foreground cursor-not-allowed"
-            >
-              Change avatar
-            </button>
           </div>
-          <SettingsRow label="Name" description="Stored on this device only — not synced across devices yet">
-            <input
-              value={settings.profile.name}
-              onChange={(e) => update({ profile: { ...settings.profile, name: e.target.value } })}
-              className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground text-right focus:outline-none focus:border-rally-blue transition-colors w-40"
-            />
-          </SettingsRow>
-          <SettingsRow label="Email" description="From your account — sign-in email can't be changed here">
-            <input
-              value={settings.profile.email}
-              readOnly
-              className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-muted-foreground text-right w-52 cursor-not-allowed"
-            />
-          </SettingsRow>
-        </SettingsSection>
+        </section>
 
-        <DemoModePanel />
+        {/* PRIVACY & LOCATION */}
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Privacy & Location</h2>
+          <div className="rounded-2xl border border-border bg-card divide-y divide-border">
+            <div className="p-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Location Sharing</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {settings.location.sharing 
+                    ? 'Shared with current RALLY members'
+                    : 'Location sharing is disabled'}
+                </p>
+              </div>
+              <Toggle
+                checked={settings.location.sharing}
+                onChange={(v) => {
+                  update({ location: { ...settings.location, sharing: v } });
+                  showToast(v ? 'Location sharing enabled' : 'Location sharing disabled');
+                }}
+                label="Location Sharing"
+              />
+            </div>
+            <div className="p-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Location Permission</p>
+                <p className="text-xs text-muted-foreground mt-1">Manage browser GPS access</p>
+              </div>
+              <button
+                onClick={handleLocationManage}
+                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-foreground hover:bg-white/10 transition-colors shrink-0"
+              >
+                Manage
+              </button>
+            </div>
+          </div>
+        </section>
 
-        <SettingsSection title="Notifications" icon={Bell}>
-          <SettingsRow label="Alert notifications" description="Route deviations, separation, and stops">
+        {/* NOTIFICATIONS */}
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Notifications</h2>
+          <div className="rounded-2xl border border-border bg-card p-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">RALLY Alerts</p>
+              <p className="text-xs text-muted-foreground mt-1">Safety and trip notifications</p>
+            </div>
             <Toggle
               checked={settings.notifications.alerts}
-              onChange={(v) => update({ notifications: { ...settings.notifications, alerts: v } })}
-              label="Alert notifications"
+              onChange={(v) => {
+                update({ notifications: { ...settings.notifications, alerts: v } });
+                showToast('Preferences saved');
+              }}
+              label="RALLY Alerts"
             />
-          </SettingsRow>
-          <SettingsRow label="SOS notifications" description="Emergency alerts from your group">
-            <Toggle
-              checked={settings.notifications.sos}
-              onChange={(v) => update({ notifications: { ...settings.notifications, sos: v } })}
-              label="SOS notifications"
-            />
-          </SettingsRow>
-          <SettingsRow label="Connectivity alerts" description="When a member loses signal">
-            <Toggle
-              checked={settings.notifications.connectivity}
-              onChange={(v) => update({ notifications: { ...settings.notifications, connectivity: v } })}
-              label="Connectivity alerts"
-            />
-          </SettingsRow>
-          <SettingsRow label="Trip summaries" description="Recap after every completed trip">
-            <Toggle
-              checked={settings.notifications.tripSummaries}
-              onChange={(v) => update({ notifications: { ...settings.notifications, tripSummaries: v } })}
-              label="Trip summaries"
-            />
-          </SettingsRow>
-        </SettingsSection>
+          </div>
+        </section>
 
-        <SettingsSection title="Location" icon={MapPin}>
-          <SettingsRow label="Location sharing" description="Share your position with your group">
-            <Toggle
-              checked={settings.location.sharing}
-              onChange={(v) => update({ location: { ...settings.location, sharing: v } })}
-              label="Location sharing"
-            />
-          </SettingsRow>
-          <SettingsRow label="Location accuracy">
-            <select
-              value={settings.location.accuracy}
-              onChange={(e) => update({ location: { ...settings.location, accuracy: e.target.value as typeof settings.location.accuracy } })}
-              className={selectClass}
-            >
-              <option value="high">High</option>
-              <option value="balanced">Balanced</option>
-              <option value="low">Low</option>
-            </select>
-          </SettingsRow>
-          <SettingsRow label="Background tracking">
-            <select
-              value={settings.location.backgroundTracking}
-              onChange={(e) =>
-                update({ location: { ...settings.location, backgroundTracking: e.target.value as typeof settings.location.backgroundTracking } })
-              }
-              className={selectClass}
-            >
-              <option value="always">Always</option>
-              <option value="while_active">While trip is active</option>
-              <option value="never">Never</option>
-            </select>
-          </SettingsRow>
-        </SettingsSection>
-
-        <SettingsSection title="Safety" icon={ShieldHalf}>
-          <SettingsRow label="Alert sensitivity">
-            <select
-              value={settings.safety.alertSensitivity}
-              onChange={(e) => update({ safety: { ...settings.safety, alertSensitivity: e.target.value as typeof settings.safety.alertSensitivity } })}
-              className={selectClass}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </SettingsRow>
-          <SettingsRow label="Separation threshold" description={`${settings.safety.separationThresholdM}m from group`}>
-            <input
-              type="range"
-              min={50}
-              max={500}
-              step={10}
-              value={settings.safety.separationThresholdM}
-              onChange={(e) => update({ safety: { ...settings.safety, separationThresholdM: Number(e.target.value) } })}
-              className="w-32 accent-rally-blue"
-            />
-          </SettingsRow>
-          <SettingsRow label="Route deviation threshold" description={`${settings.safety.routeDeviationThresholdM}m off route`}>
-            <input
-              type="range"
-              min={25}
-              max={300}
-              step={5}
-              value={settings.safety.routeDeviationThresholdM}
-              onChange={(e) => update({ safety: { ...settings.safety, routeDeviationThresholdM: Number(e.target.value) } })}
-              className="w-32 accent-rally-blue"
-            />
-          </SettingsRow>
-        </SettingsSection>
-
-        <SettingsSection title="Appearance" icon={Palette}>
-          <SettingsRow label="Theme">
-            <div className="flex items-center gap-1.5">
-              {(['dark', 'light', 'system'] as const).map((theme) => (
-                <button
-                  key={theme}
-                  onClick={() => update({ appearance: { theme } })}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border capitalize transition-colors ${
-                    settings.appearance.theme === theme
-                      ? 'bg-rally-blue/15 border-rally-blue/40 text-rally-blue'
-                      : 'bg-card border-border text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {theme}
-                </button>
-              ))}
+        {/* PREFERENCES */}
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Preferences</h2>
+          <div className="rounded-2xl border border-border bg-card divide-y divide-border">
+            <div className="p-5 flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-foreground">Theme</p>
+              <div className="flex bg-background border border-border rounded-lg p-1">
+                {(['dark', 'light', 'system'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      update({ appearance: { ...settings.appearance, theme: t } });
+                      showToast('Preferences saved');
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-colors ${
+                      settings.appearance.theme === t
+                        ? 'bg-rally-blue text-white'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
-          </SettingsRow>
-        </SettingsSection>
+            <div className="p-5 flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-foreground">Units</p>
+              <div className="flex bg-background border border-border rounded-lg p-1">
+                {(['Metric', 'Imperial'] as const).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => {
+                      update({ appearance: { ...settings.appearance, units: u } });
+                      showToast('Preferences saved');
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                      settings.appearance.units === u
+                        ? 'bg-rally-blue text-white'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <SettingsSection title="Account" icon={KeyRound}>
-          <SettingsRow label="Password" description="Last changed a while ago">
-            <button type="button" className="text-sm font-semibold text-rally-blue hover:underline">
-              Change password
-            </button>
-          </SettingsRow>
-          <SettingsRow label="Sign out of RALLY">
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-60"
-            >
-              <LogOut className="w-3.5 h-3.5" /> {loggingOut ? 'Signing out…' : 'Logout'}
-            </button>
-          </SettingsRow>
-        </SettingsSection>
+        {/* ABOUT */}
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">About</h2>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <p className="text-sm font-bold text-foreground">RALLY</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-3">AI-powered group travel safety and coordination platform.</p>
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <span>Version 1.0.0</span>
+              <span>·</span>
+              <span className="hover:text-foreground transition-colors cursor-pointer">Privacy</span>
+              <span>·</span>
+              <span className="hover:text-foreground transition-colors cursor-pointer">About</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="pt-2">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Log Out
+          </button>
+        </section>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm shadow-xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-foreground mb-4">Edit Profile</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase mb-1.5 block">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase mb-1.5 block">
+                  Avatar
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-rally-blue/15 border border-rally-blue/30 text-rally-blue font-bold flex items-center justify-center text-lg">
+                    {editName ? editName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <button type="button" disabled className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-muted-foreground cursor-not-allowed">
+                    Upload / Change
+                  </button>
+                </div>
+              </div>
+
+              {editError && (
+                <p className="text-sm font-medium text-red-400">{editError}</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 mt-8">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={isSaving}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-foreground text-sm font-bold hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-rally-blue text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toasts */}
+      {toastMessage && createPortal(
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="bg-foreground text-background px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2">
+            <Check className="w-4 h-4" />
+            <span className="text-sm font-semibold">{toastMessage}</span>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

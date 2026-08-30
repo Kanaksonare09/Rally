@@ -5,6 +5,7 @@ import type { AlertItem } from '@/lib/mock/types';
 
 const SEVERITY_STYLE: Record<AlertItem['severity'], { icon: React.ElementType; color: string; bg: string; border: string }> = {
   critical: { icon: ShieldAlert, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+  high: { icon: AlertTriangle, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
   warning: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' },
   info: { icon: Radio, color: 'text-rally-blue', bg: 'bg-rally-blue/10', border: 'border-rally-blue/20' },
 };

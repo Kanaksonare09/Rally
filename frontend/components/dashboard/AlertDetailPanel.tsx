@@ -7,6 +7,7 @@ import { ALERT_TYPE_LABEL } from './AlertRow';
 
 const SEVERITY_TEXT: Record<AlertItem['severity'], string> = {
   critical: 'text-red-400',
+  high: 'text-orange-400',
   warning: 'text-amber-400',
   info: 'text-rally-blue',
 };

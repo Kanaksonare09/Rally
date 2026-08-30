@@ -21,8 +21,9 @@ export type AlertStatus = 'active' | 'resolved';
 export interface AlertItem {
   id: string;
   type: AlertType;
-  severity: 'warning' | 'critical' | 'info';
+  severity: 'warning' | 'high' | 'critical' | 'info';
   status: AlertStatus;
+  isRead?: boolean;
   message: string;
   detail: string;
   memberId: string | null;
@@ -129,5 +130,6 @@ export interface Settings {
   };
   appearance: {
     theme: 'dark' | 'light' | 'system';
+    units: 'Metric' | 'Imperial';
   };
 }

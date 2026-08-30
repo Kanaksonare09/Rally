@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Instrument_Serif } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
+import { cn } from "@/lib/utils";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark scroll-smooth ${inter.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" className={cn("dark", "scroll-smooth", inter.variable, instrumentSerif.variable, "font-sans")}>
       <body className="bg-background text-foreground min-h-screen antialiased font-sans selection:bg-white/20 selection:text-white">
         <Providers>{children}</Providers>
       </body>

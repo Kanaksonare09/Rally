@@ -25,6 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   appearance: {
     theme: 'dark',
+    units: 'Metric',
   },
 };
 

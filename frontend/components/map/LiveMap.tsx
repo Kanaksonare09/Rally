@@ -1,9 +1,9 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { LocateFixed, Plus, Minus, Maximize, Route as RouteIcon, Layers, Check } from 'lucide-react';
+import { LocateFixed, Plus, Minus, Maximize, Route as RouteIcon } from 'lucide-react';
 import type { Map as LeafletMap } from 'leaflet';
 import type { AlertItem, Group } from '@/lib/mock/types';
 import { STATUS_STYLE } from '@/components/dashboard/status';
@@ -13,78 +13,65 @@ const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer)
 const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
 const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), { ssr: false });
+const CircleComp = dynamic(() => import('react-leaflet').then((m) => m.Circle), { ssr: false });
 const MapBridge = dynamic(() => import('./MapBridge'), { ssr: false });
-
-export type MapStyleKey = 'google_roadmap' | 'google_satellite' | 'google_hybrid' | 'google_terrain' | 'osm';
-
-interface MapStyleConfig {
-  name: string;
-  url: string;
-  attribution: string;
-  className?: string;
-}
-
-const MAP_STYLES: Record<MapStyleKey, MapStyleConfig> = {
-  google_roadmap: {
-    name: 'Google Maps (Dark)',
-    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
-    className: 'map-tiles-dark',
-  },
-  google_satellite: {
-    name: 'Google Satellite',
-    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
-  },
-  google_hybrid: {
-    name: 'Google Hybrid',
-    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
-  },
-  google_terrain: {
-    name: 'Google Terrain',
-    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
-  },
-  osm: {
-    name: 'OpenStreetMap',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
-    className: 'map-tiles-dark',
-  },
-};
 
 export default function LiveMap({
   group,
   showStart = false,
   alerts,
+  routeAlternatives,
+  onRouteSelect,
+  customDestination,
 }: {
-  group: Group;
+  group?: Group;
   showStart?: boolean;
   alerts?: AlertItem[];
+  routeAlternatives?: {
+    id: string;
+    coordinates: { lat: number; lng: number }[];
+    selected: boolean;
+  }[];
+  onRouteSelect?: (id: string) => void;
+  customDestination?: { lat: number; lng: number; name: string };
 }) {
   const [mounted, setMounted] = useState(false);
   const [L, setL] = useState<any>(null);
   const [showRoute, setShowRoute] = useState(true);
-  const [currentStyleKey, setCurrentStyleKey] = useState<MapStyleKey>('google_roadmap');
-  const [showLayerMenu, setShowLayerMenu] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
+
+  const [deviceLoc, setDeviceLoc] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     setMounted(true);
     import('leaflet').then((mod) => setL(mod.default));
+    
+    // Get real device location for the starting point — high accuracy
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setDeviceLoc([pos.coords.latitude, pos.coords.longitude]);
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+      );
+    }
   }, []);
+
+  useEffect(() => {
+    if (mapRef.current && routeAlternatives && routeAlternatives.length > 0) {
+      handleFitGroup();
+    }
+  }, [routeAlternatives]);
 
   if (!mounted || !L) {
     return (
       <div className="w-full h-full min-h-[420px] rounded-2xl border border-border bg-card flex flex-col items-center justify-center text-muted-foreground gap-3">
         <div className="w-8 h-8 border-2 border-rally-blue border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-medium">Initializing Google map…</p>
+        <p className="text-sm font-medium">Initializing live map…</p>
       </div>
     );
   }
-
-  const activeStyle = MAP_STYLES[currentStyleKey];
 
   const memberIcon = (name: string, hex: string, isMe: boolean) =>
     L.divIcon({
@@ -133,56 +120,105 @@ export default function LiveMap({
     iconAnchor: [11, 11],
   });
 
-  const routePositions = group.route.map((wp) => [wp.lat, wp.lng]) as [number, number][];
-  const groupCenterLat = group.members.reduce((sum, m) => sum + m.lat, 0) / group.members.length;
-  const groupCenterLng = group.members.reduce((sum, m) => sum + m.lng, 0) / group.members.length;
-  const center: [number, number] = [groupCenterLat, groupCenterLng];
+  const validMembers = group ? group.members.filter(m => m.lat !== 0 && m.lng !== 0) : [];
+  
+  const destLat = customDestination ? customDestination.lat : (group ? group.destinationLat : 0);
+  const destLng = customDestination ? customDestination.lng : (group ? group.destinationLng : 0);
+  const destName = customDestination ? customDestination.name : (group ? group.destination : 'Destination');
+  const hasDestination = destLat !== 0 || destLng !== 0;
+  
+  const groupCenterLat = validMembers.length ? validMembers.reduce((sum, m) => sum + m.lat, 0) / validMembers.length : (hasDestination ? destLat : 0);
+  const groupCenterLng = validMembers.length ? validMembers.reduce((sum, m) => sum + m.lng, 0) / validMembers.length : (hasDestination ? destLng : 0);
+  
+  // Use device location as exact starting point if available, otherwise fallback to group center
+  const center: [number, number] = deviceLoc || [groupCenterLat, groupCenterLng];
 
   const handleFitGroup = () => {
     if (!mapRef.current) return;
-    const pts = group.members.map((m) => [m.lat, m.lng] as [number, number]);
-    pts.push([group.destinationLat, group.destinationLng]);
+    const pts = validMembers.map((m) => [m.lat, m.lng] as [number, number]);
+    if (hasDestination) pts.push([destLat, destLng]);
+    if (deviceLoc) pts.push(deviceLoc);
+    if (routeAlternatives && routeAlternatives.length > 0) {
+      routeAlternatives.forEach(alt => {
+        alt.coordinates.forEach(pt => pts.push([pt.lat, pt.lng]));
+      });
+    }
+    
+    if (pts.length < 2) {
+      // Only one point — just fly to it
+      const p = pts[0] || deviceLoc || center;
+      mapRef.current.flyTo(p, 15, { duration: 0.6 });
+      return;
+    }
     mapRef.current.fitBounds(pts, { padding: [60, 60] });
   };
 
   const handleMapReady = (map: LeafletMap) => {
     mapRef.current = map;
-    const pts = group.members.map((m) => [m.lat, m.lng] as [number, number]);
-    pts.push([group.destinationLat, group.destinationLng]);
-    map.fitBounds(pts, { padding: [70, 70], maxZoom: 16, animate: false });
+    const pts = validMembers.map((m) => [m.lat, m.lng] as [number, number]);
+    if (hasDestination) pts.push([destLat, destLng]);
+    if (deviceLoc) pts.push(deviceLoc);
+    if (routeAlternatives && routeAlternatives.length > 0) {
+      routeAlternatives.forEach(alt => {
+        alt.coordinates.forEach(pt => pts.push([pt.lat, pt.lng]));
+      });
+    }
+    
+    if (pts.length === 0) {
+      // No real points at all — center on device or default
+      map.setView(deviceLoc || center, 15);
+    } else if (pts.length === 1) {
+      map.setView(pts[0], 15);
+    } else {
+      map.fitBounds(pts, { padding: [70, 70], maxZoom: 16, animate: false });
+    }
   };
 
   const handleLocateMe = () => {
     if (!mapRef.current) return;
-    const me = group.members.find((m) => m.isCurrentUser);
-    if (me) mapRef.current.flyTo([me.lat, me.lng], 15, { duration: 0.6 });
+    const me = group ? group.members.find((m) => m.isCurrentUser) : null;
+    if (me && me.lat !== 0 && me.lng !== 0) {
+      mapRef.current.flyTo([me.lat, me.lng], 15, { duration: 0.6 });
+    } else if (deviceLoc) {
+      mapRef.current.flyTo(deviceLoc, 15, { duration: 0.6 });
+    }
   };
 
   return (
     <div className="relative w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-border">
-      <MapContainer center={center} zoom={12} zoomControl={false} scrollWheelZoom style={{ width: '100%', height: '100%' }}>
+      <MapContainer center={center} zoom={15} zoomControl={false} scrollWheelZoom style={{ width: '100%', height: '100%' }}>
         <TileLayer
-          key={currentStyleKey}
-          url={activeStyle.url}
-          attribution={activeStyle.attribution}
-          className={activeStyle.className || ''}
-          maxZoom={20}
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <MapBridge onReady={handleMapReady} />
 
-        {showRoute && routePositions.length > 0 && (
-          <Polyline positions={routePositions} color="#19BFFF" weight={4} opacity={0.75} dashArray="8, 8" />
+        {routeAlternatives?.map(alt => (
+          <Polyline
+            key={alt.id}
+            positions={alt.coordinates.map(p => [p.lat, p.lng])}
+            pathOptions={{
+              color: alt.selected ? '#19BFFF' : '#6B7280',
+              weight: alt.selected ? 5 : 4,
+              opacity: alt.selected ? 1 : 0.6
+            }}
+            eventHandlers={{
+              click: () => onRouteSelect?.(alt.id)
+            }}
+          />
+        ))}
+
+        {hasDestination && (
+          <Marker position={[destLat, destLng]} icon={destinationIcon}>
+            <Popup>
+              <div className="text-xs font-semibold">{destName}</div>
+              <div className="text-[11px] text-neutral-500">Destination</div>
+            </Popup>
+          </Marker>
         )}
 
-        <Marker position={[group.destinationLat, group.destinationLng]} icon={destinationIcon}>
-          <Popup>
-            <div className="text-xs font-semibold">{group.destination}</div>
-            <div className="text-[11px] text-neutral-500">Destination</div>
-          </Popup>
-        </Marker>
-
-        {showStart && group.route.length > 0 && (
-          <Marker position={[group.route[0].lat, group.route[0].lng]} icon={startIcon}>
+        {showStart && group && group.route.length > 0 && (
+          <Marker position={[group.route[0].lat || 0, group.route[0].lng || 0]} icon={startIcon}>
             <Popup>
               <div className="text-xs font-semibold">Start</div>
             </Popup>
@@ -190,10 +226,10 @@ export default function LiveMap({
         )}
 
         {alerts?.map((a) => {
-          const m = group.members.find((mem) => mem.id === a.memberId);
+          const m = group?.members.find((mem) => mem.id === a.memberId);
           if (!m) return null;
           return (
-            <Marker key={a.id} position={[m.lat + 0.0008, m.lng + 0.0008]} icon={alertIcon}>
+            <Marker key={a.id} position={[(m.lat || 0) + 0.0008, (m.lng || 0) + 0.0008]} icon={alertIcon}>
               <Popup>
                 <div className="text-xs font-semibold">{a.message}</div>
                 <div className="text-[11px] text-neutral-500">{a.detail}</div>
@@ -202,29 +238,38 @@ export default function LiveMap({
           );
         })}
 
-        {group.members.map((m) => {
-          const style = STATUS_STYLE[m.status];
+        {(group ? group.members.filter(m => m.isCurrentUser) : (deviceLoc ? [{ id: 'me', name: 'You', isCurrentUser: true, lat: deviceLoc[0], lng: deviceLoc[1], speedKmh: 0, status: 'safe' }] : [])).map((m: any) => {
+          const style = STATUS_STYLE[m.status as keyof typeof STATUS_STYLE] || STATUS_STYLE.safe;
+          if (m.lat === 0 && m.lng === 0) return null;
           return (
-            <Marker key={m.id} position={[m.lat, m.lng]} icon={memberIcon(m.name, style.hex, m.isCurrentUser)}>
-              <Popup>
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold flex items-center gap-1.5">
-                    {m.name} {m.isCurrentUser && <span className="text-[10px] text-neutral-500">(You)</span>}
+            <React.Fragment key={m.id}>
+              {m.isCurrentUser && (
+                <CircleComp
+                  center={[m.lat, m.lng]}
+                  radius={30}
+                  pathOptions={{ color: '#4285F4', fillColor: '#4285F4', fillOpacity: 0.15, weight: 2 }}
+                />
+              )}
+              <Marker position={[m.lat, m.lng]} icon={memberIcon(m.name, style.hex, m.isCurrentUser)}>
+                <Popup>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold flex items-center gap-1.5">
+                      {m.name} {m.isCurrentUser && <span className="text-[10px] text-neutral-500">(You)</span>}
+                    </div>
+                    <div className="text-[11px] text-neutral-500">{style.label} · {m.speedKmh} km/h</div>
                   </div>
-                  <div className="text-[11px] text-neutral-500">{style.label} · {m.speedKmh} km/h</div>
-                </div>
-              </Popup>
-            </Marker>
+                </Popup>
+              </Marker>
+            </React.Fragment>
           );
         })}
       </MapContainer>
 
       {/* Floating map controls */}
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-        <MapControlButton onClick={handleLocateMe} label="Locate me">
+        <MapControlButton onClick={handleLocateMe} label="Recenter">
           <LocateFixed className="w-4 h-4" />
         </MapControlButton>
-
         <div className="flex flex-col rounded-xl overflow-hidden border border-white/10 bg-[#0A0A0A]/90 backdrop-blur">
           <button
             onClick={() => mapRef.current?.zoomIn()}
@@ -242,54 +287,12 @@ export default function LiveMap({
             <Minus className="w-4 h-4" />
           </button>
         </div>
-
         <MapControlButton onClick={handleFitGroup} label="Fit group">
           <Maximize className="w-4 h-4" />
         </MapControlButton>
-
         <MapControlButton onClick={() => setShowRoute((v) => !v)} label="Toggle route" active={showRoute}>
           <RouteIcon className="w-4 h-4" />
         </MapControlButton>
-
-        {/* Google Map Layer Switcher Button */}
-        <div className="relative">
-          <MapControlButton
-            onClick={() => setShowLayerMenu((v) => !v)}
-            label="Map layers"
-            active={showLayerMenu}
-          >
-            <Layers className="w-4 h-4" />
-          </MapControlButton>
-
-          {showLayerMenu && (
-            <div className="absolute right-12 top-0 w-48 rounded-xl border border-white/10 bg-[#0A0A0A]/95 backdrop-blur shadow-2xl p-1.5 flex flex-col gap-1 text-xs z-[1010]">
-              <div className="px-2 py-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                Map Provider
-              </div>
-              {(Object.keys(MAP_STYLES) as MapStyleKey[]).map((key) => {
-                const conf = MAP_STYLES[key];
-                const isSelected = key === currentStyleKey;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setCurrentStyleKey(key);
-                      setShowLayerMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg font-medium transition-colors text-left ${
-                      isSelected
-                        ? 'bg-rally-blue/20 text-rally-blue border border-rally-blue/40'
-                        : 'text-neutral-300 hover:bg-white/10'
-                    }`}
-                  >
-                    <span>{conf.name}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-rally-blue" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -321,4 +324,3 @@ function MapControlButton({
     </button>
   );
 }
-
