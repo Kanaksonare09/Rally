@@ -107,6 +107,8 @@ export default function RoutePage() {
 
     setIsCalculating(true);
     setRouteError(null);
+    setRouteAlternatives([]);
+    setSelectedRouteId(null);
     try {
       const res = await calculateRoute(deviceLoc, { lat: destination.latitude, lng: destination.longitude });
       setRouteAlternatives(res);
@@ -221,7 +223,7 @@ export default function RoutePage() {
                 )}
 
                 {!isCalculating && routeAlternatives.length === 0 ? (
-                  <div className="space-y-4">
+                    <div className={`space-y-4 ${suggestions.length > 0 && !destination ? 'pb-48' : 'pb-4'}`}>
                     <h2 className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">Where are you going?</h2>
                     
                     <div className="relative">
@@ -231,6 +233,11 @@ export default function RoutePage() {
                       <input 
                         value={query}
                         onChange={e => setQuery(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && suggestions.length > 0) {
+                            handleSelectDestination(suggestions[0]);
+                          }
+                        }}
                         placeholder="Search destination"
                         disabled={!!destination}
                         className="w-full bg-card border border-border rounded-xl pl-11 pr-4 py-3.5 text-sm text-foreground focus:outline-none focus:border-rally-blue transition-colors disabled:opacity-60"
