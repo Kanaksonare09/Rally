@@ -16,6 +16,13 @@ const SEVERITY_CONFIG: Record<
     badgeBg: 'bg-red-500/10 text-red-400 border-red-500/30',
     border: 'border-red-500/30 bg-red-500/[0.04]',
   },
+  high: {
+    label: 'HIGH',
+    icon: ShieldAlert,
+    color: 'text-orange-400',
+    badgeBg: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+    border: 'border-orange-500/30 bg-orange-500/[0.04]',
+  },
   warning: {
     label: 'WARNING',
     icon: AlertTriangle,

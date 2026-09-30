@@ -122,9 +122,10 @@ export default function TripHistoryPage() {
           <div className="space-y-3">
             <p className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase px-2">Trips</p>
             {filtered.map((trip) => {
-              const h = Math.floor(trip.durationMin / 60);
-              const m = trip.durationMin % 60;
-              const durationStr = h > 0 ? `${h}h ${m}m` : `${m} min`;
+              const duration = trip.durationMin ?? 0;
+              const h = Math.floor(duration / 60);
+              const m = duration % 60;
+              const durationStr = trip.durationMin != null ? (h > 0 ? `${h}h ${m}m` : `${m} min`) : 'N/A';
 
               return (
                 <div key={trip.id} className="rounded-2xl border border-border bg-card p-5 hover:border-border/80 transition-colors flex flex-col gap-4">

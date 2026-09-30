@@ -180,6 +180,67 @@ class RallyGroupService implements GroupService {
     this.emit();
   }
 
+  async removeMember(memberId: string): Promise<void> {
+    if (!this.apiGroup) throw new Error('No active group.');
+    await groupsApi.removeMember(this.apiGroup.id, memberId);
+    await this.refresh();
+  }
+
+  markAlertAsRead(alertId: string): void {
+    if (!this.group) return;
+    const alerts = this.group.alerts.map((a) => (a.id === alertId ? { ...a, isRead: true } : a));
+    this.group = { ...this.group, alerts };
+    this.emit();
+  }
+
+  markAllAlertsAsRead(): void {
+    if (!this.group) return;
+    const alerts = this.group.alerts.map((a) => ({ ...a, isRead: true }));
+    this.group = { ...this.group, alerts };
+    this.emit();
+  }
+
+  setTripRoute(destination: string, destLat: number, destLng: number, route: {lat: number, lng: number}[], distanceMeters: number, durationSeconds: number): void {
+    if (!this.group) return;
+    this.group = {
+      ...this.group,
+      destination,
+      destinationLat: destLat,
+      destinationLng: destLng,
+      route,
+      trip: this.group.trip ? {
+        ...this.group.trip,
+        distanceKm: Number((distanceMeters / 1000).toFixed(1)),
+        durationMin: Math.round(durationSeconds / 60),
+      } : {
+        distanceKm: Number((distanceMeters / 1000).toFixed(1)),
+        durationMin: Math.round(durationSeconds / 60),
+        membersCount: this.group.members.length,
+        alertsCount: 0,
+        startedAt: Date.now(),
+      }
+    };
+    this.emit();
+  }
+
+  startTrip(): void {
+    if (this.apiTrip && this.apiTrip.status === 'CREATED') {
+      void tripsApi.startTrip(this.apiTrip.id).then(() => this.refresh()).catch(console.error);
+    }
+  }
+
+  updateMyPosition(lat: number, lng: number, speed: number | null, heading: number | null): void {
+    if (this.socket && this.socket.getStatus() === 'CONNECTED') {
+      this.socket.sendLocationUpdate({
+        latitude: lat,
+        longitude: lng,
+        speed: speed ?? undefined,
+        heading: heading ?? undefined,
+        recorded_at: new Date().toISOString(),
+      });
+    }
+  }
+
   async endTrip(): Promise<TripSummary> {
     if (!this.apiTrip) throw new Error('No active trip to end.');
     const ended = await tripsApi.endTrip(this.apiTrip.id);

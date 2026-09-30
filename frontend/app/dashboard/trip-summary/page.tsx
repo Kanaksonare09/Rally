@@ -26,15 +26,21 @@ function TripSummaryContent() {
     );
   }
 
+  const durationMin = summary.durationMin ?? 0;
+  const durH = Math.floor(durationMin / 60);
+  const durM = durationMin % 60;
+  const durationVal = summary.durationMin != null ? (durH > 0 ? `${durH}h ${durM}m` : `${durM}m`) : 'N/A';
+  const distanceVal = summary.distanceKm != null ? `${summary.distanceKm} km` : 'N/A';
+
   const stats = [
-    { label: 'Distance', value: `${summary.distanceKm} km`, icon: Route },
-    { label: 'Duration', value: `${Math.floor(summary.durationMin / 60)}h ${summary.durationMin % 60}m`, icon: Clock },
+    { label: 'Distance', value: distanceVal, icon: Route },
+    { label: 'Duration', value: durationVal, icon: Clock },
     { label: 'Members', value: `${summary.membersCount}`, icon: Users },
-    { label: 'Alerts', value: `${summary.alertsCount}`, icon: BellRing },
-    { label: 'Route deviations', value: `${summary.routeDeviations}`, icon: Navigation2 },
-    { label: 'Separation events', value: `${summary.separationEvents}`, icon: UsersRound },
-    { label: 'Unexpected stops', value: `${summary.unexpectedStops}`, icon: Octagon },
-    { label: 'SOS', value: `${summary.sosCount}`, icon: Siren },
+    { label: 'Alerts', value: `${summary.alertsCount ?? 0}`, icon: BellRing },
+    { label: 'Route deviations', value: `${summary.routeDeviations ?? 0}`, icon: Navigation2 },
+    { label: 'Separation events', value: `${summary.separationEvents ?? 0}`, icon: UsersRound },
+    { label: 'Unexpected stops', value: `${summary.unexpectedStops ?? 0}`, icon: Octagon },
+    { label: 'SOS', value: `${summary.sosCount ?? 0}`, icon: Siren },
   ];
 
   return (
@@ -61,7 +67,7 @@ function TripSummaryContent() {
 
         <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center text-center">
           <p className="text-[11px] font-semibold text-muted-foreground tracking-wider mb-4">SAFETY SCORE</p>
-          <RiskRing risk={{ score: summary.safetyScore, level: summary.riskLevel }} size={128} />
+          <RiskRing risk={{ score: summary.safetyScore ?? 100, level: summary.riskLevel ?? 'LOW RISK' }} size={128} />
           <p
             className="text-sm font-bold tracking-wide mt-4"
             style={{
@@ -69,7 +75,7 @@ function TripSummaryContent() {
                 summary.riskLevel === 'LOW RISK' ? '#34D399' : summary.riskLevel === 'MODERATE RISK' ? '#FBBF24' : '#F87171',
             }}
           >
-            {summary.riskLevel}
+            {summary.riskLevel ?? 'LOW RISK'}
           </p>
         </div>
 

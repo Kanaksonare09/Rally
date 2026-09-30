@@ -47,8 +47,9 @@ export default function TripDetailsPage() {
     );
   }
 
-  const h = Math.floor(trip.durationMin / 60);
-  const m = trip.durationMin % 60;
+  const duration = trip.durationMin ?? 0;
+  const h = Math.floor(duration / 60);
+  const m = duration % 60;
   const durationStr = h > 0 ? `${h}h ${m}m` : `${m} min`;
 
   return (
