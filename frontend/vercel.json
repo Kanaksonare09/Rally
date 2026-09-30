@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR_RAILWAY_BACKEND_URL/api/:path*"
+      "destination": "https://rally-production-33d7.up.railway.app/api/:path*"
     }
   ]
 }
