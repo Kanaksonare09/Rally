@@ -31,6 +31,10 @@ class Settings(BaseSettings):
 
     # --- Database (Supabase Postgres) ---
     DATABASE_URL: Optional[str] = None
+    DATABASE_POOL_SIZE: int = 5
+    DATABASE_MAX_OVERFLOW: int = 10
+    DATABASE_POOL_TIMEOUT_SECONDS: int = 30
+    DATABASE_POOL_RECYCLE_SECONDS: int = 1800
 
     # --- Redis (wired later — read now so config is ready ahead of time) ---
     REDIS_URL: Optional[str] = None
